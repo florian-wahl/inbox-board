@@ -49,8 +49,8 @@ export const useInboxSync = () => {
                 for (const subscription of subscriptions) {
                     await db.parsedItems.put({
                         type: 'subscription',
-                        emailId: subscription.emailId,
-                        data: subscription,
+                        emailId: subscription!.emailId,
+                        data: subscription!,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -58,8 +58,8 @@ export const useInboxSync = () => {
                 for (const order of orders) {
                     await db.parsedItems.put({
                         type: 'order',
-                        emailId: order.emailId,
-                        data: order,
+                        emailId: order!.emailId,
+                        data: order!,
                         createdAt: Date.now(),
                         updatedAt: Date.now(),
                     });
@@ -99,8 +99,8 @@ export const useInboxSync = () => {
                     for (const subscription of subscriptions) {
                         await db.parsedItems.put({
                             type: 'subscription',
-                            emailId: subscription.emailId,
-                            data: subscription,
+                            emailId: subscription!.emailId,
+                            data: subscription!,
                             createdAt: Date.now(),
                             updatedAt: Date.now(),
                         });
@@ -108,8 +108,8 @@ export const useInboxSync = () => {
                     for (const order of orders) {
                         await db.parsedItems.put({
                             type: 'order',
-                            emailId: order.emailId,
-                            data: order,
+                            emailId: order!.emailId,
+                            data: order!,
                             createdAt: Date.now(),
                             updatedAt: Date.now(),
                         });
