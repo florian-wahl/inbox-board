@@ -46,7 +46,7 @@ export class EncryptionUtil {
             result.set(iv);
             result.set(encryptedArray, iv.length);
 
-            return btoa(String.fromCharCode(...result));
+            return btoa(String.fromCharCode(...Array.from(result)));
         } catch (error) {
             console.error('Encryption failed:', error);
             throw new Error('Failed to encrypt data');
