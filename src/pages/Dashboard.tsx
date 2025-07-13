@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useInboxData } from '../contexts/InboxDataContext';
 
 const Dashboard: React.FC = () => {
@@ -11,30 +11,32 @@ const Dashboard: React.FC = () => {
                 Dashboard
             </Typography>
 
-            <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Subscriptions ({subscriptions.length})
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Subscription cards will be displayed here
-                        </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                    <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                        <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                            <Typography variant="h6" gutterBottom>
+                                Subscriptions ({subscriptions.length})
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Subscription cards will be displayed here
+                            </Typography>
+                        </Box>
                     </Box>
-                </Grid>
 
-                <Grid item xs={12} md={6}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Recent Orders ({orders.length})
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Order cards will be displayed here
-                        </Typography>
+                    <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                        <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                            <Typography variant="h6" gutterBottom>
+                                Recent Orders ({orders.length})
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Order cards will be displayed here
+                            </Typography>
+                        </Box>
                     </Box>
-                </Grid>
+                </Box>
 
-                <Grid item xs={12}>
+                <Box>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                         <Typography variant="h6" gutterBottom>
                             Unsubscribe List ({unsubscribes.length})
@@ -43,8 +45,8 @@ const Dashboard: React.FC = () => {
                             High-noise senders will be displayed here
                         </Typography>
                     </Box>
-                </Grid>
-            </Grid>
+                </Box>
+            </Box>
         </Box>
     );
 };
