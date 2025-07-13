@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { db } from '../db';
 
 interface Email {
     id: string;
@@ -44,6 +45,26 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [unsubscribes, setUnsubscribes] = useState<string[]>([]);
+
+    // Add useEffect to load data from parsedItems
+    useEffect(() => {
+        const loadData = async () => {
+            const parsedItems = await db.parsedItems.toArray();
+
+            const subscriptions = parsedItems
+                .filter(item => item.type === 'subscription')
+                .map(item => item.data);
+
+            const orders = parsedItems
+                .filter(item => item.type === 'order')
+                .map(item => item.data);
+
+            setSubscriptions(subscriptions);
+            setOrders(orders);
+        };
+
+        loadData();
+    }, []);
 
     const reload = async (): Promise<void> => {
         // TODO: Implement data reload logic

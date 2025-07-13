@@ -45,12 +45,24 @@ export const useInboxSync = () => {
 
             // Step 4: Save to database
             updateProgress(80);
-            await db.transaction('rw', db.subscriptions, db.orders, async () => {
+            await db.transaction('rw', db.parsedItems, async () => {
                 for (const subscription of subscriptions) {
-                    await db.subscriptions.put(subscription);
+                    await db.parsedItems.put({
+                        type: 'subscription',
+                        emailId: subscription.emailId,
+                        data: subscription,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    });
                 }
                 for (const order of orders) {
-                    await db.orders.put(order);
+                    await db.parsedItems.put({
+                        type: 'order',
+                        emailId: order.emailId,
+                        data: order,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                    });
                 }
             });
 
@@ -83,12 +95,24 @@ export const useInboxSync = () => {
                     .map(msg => parserService.parseOrder(msg))
                     .filter(Boolean);
 
-                await db.transaction('rw', db.subscriptions, db.orders, async () => {
+                await db.transaction('rw', db.parsedItems, async () => {
                     for (const subscription of subscriptions) {
-                        await db.subscriptions.put(subscription);
+                        await db.parsedItems.put({
+                            type: 'subscription',
+                            emailId: subscription.emailId,
+                            data: subscription,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                        });
                     }
                     for (const order of orders) {
-                        await db.orders.put(order);
+                        await db.parsedItems.put({
+                            type: 'order',
+                            emailId: order.emailId,
+                            data: order,
+                            createdAt: Date.now(),
+                            updatedAt: Date.now(),
+                        });
                     }
                 });
             }

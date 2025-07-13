@@ -23,62 +23,19 @@ export interface RawEmailRecord {
     updatedAt: number;
 }
 
-export interface SubscriptionRecord {
+export interface ParsedItemRecord {
     id?: number;
+    type: 'subscription' | 'order' | 'unsubscribe';
     emailId: string;
-    merchant: string;
-    plan: string;
-    nextBilling: string;
-    amount: number;
-    currency: string;
-    billingCycle: string;
-    status: 'active' | 'cancelled' | 'paused';
+    data: any; // JSON data for the parsed item
     createdAt: number;
     updatedAt: number;
-}
-
-export interface UnsubscribeRecord {
-    id?: number;
-    sender: string;
-    noiseScore: number;
-    frequency: number;
-    lastEmail: string;
-    isStarred: boolean;
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface OrderRecord {
-    id?: number;
-    emailId: string;
-    orderNumber: string;
-    merchant: string;
-    amount: number;
-    currency: string;
-    date: string;
-    status: 'pending' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
-    refundStatus: 'none' | 'partial' | 'full';
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface OrderItemRecord {
-    id?: number;
-    orderId: number;
-    name: string;
-    quantity: number;
-    price: number;
-    currency: string;
-    createdAt: number;
 }
 
 export class InboxBoardDB extends Dexie {
     tokens!: Table<TokenRecord>;
     rawEmails!: Table<RawEmailRecord>;
-    subscriptions!: Table<SubscriptionRecord>;
-    unsubscribes!: Table<UnsubscribeRecord>;
-    orders!: Table<OrderRecord>;
-    orderItems!: Table<OrderItemRecord>;
+    parsedItems!: Table<ParsedItemRecord>;
 
     constructor() {
         super('InboxBoardDB');
@@ -86,12 +43,9 @@ export class InboxBoardDB extends Dexie {
         this.version(1).stores({
             tokens: '++id, accessToken, refreshToken, expiresAt',
             rawEmails: '++id, gmailId, threadId, from, date',
-            subscriptions: '++id, emailId, merchant, nextBilling, status',
-            unsubscribes: '++id, sender, noiseScore, isStarred',
-            orders: '++id, emailId, orderNumber, merchant, date, status',
-            orderItems: '++id, orderId, name',
+            parsedItems: '++id, type, emailId, createdAt',
         });
     }
 }
 
-export const db = new InboxBoardDB(); 
+export const db = new InboxBoardDB();
