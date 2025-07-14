@@ -2,12 +2,15 @@ import React from 'react';
 import { Box, Typography, Paper, Button, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Onboarding: React.FC = () => {
     const { login } = useAuth();
+    const navigate = useNavigate();
 
     const handleSignIn = async () => {
         await login();
+        navigate('/dashboard');
     };
 
     return (
