@@ -5,7 +5,7 @@ const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
 export class GmailService {
     private accessToken: string | null = null;
 
-    setAccessToken(token: string): void {
+    setAccessToken(token: string | null): void {
         this.accessToken = token;
     }
 
@@ -30,6 +30,29 @@ export class GmailService {
         return response.json();
     }
 
+    // Helper function to add delay between requests
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Process messages in batches to avoid rate limiting
+    private async processBatch<T>(items: T[], batchSize: number, processor: (batch: T[]) => Promise<any[]>): Promise<any[]> {
+        const results: any[] = [];
+
+        for (let i = 0; i < items.length; i += batchSize) {
+            const batch = items.slice(i, i + batchSize);
+            const batchResults = await processor(batch);
+            results.push(...batchResults);
+
+            // Add delay between batches to respect rate limits
+            if (i + batchSize < items.length) {
+                await this.delay(100); // 100ms delay between batches
+            }
+        }
+
+        return results;
+    }
+
     async getProfile(): Promise<GmailProfile> {
         return this.makeRequest<GmailProfile>('/profile');
     }
@@ -52,8 +75,11 @@ export class GmailService {
     }
 
     async getMessages(messageIds: string[]): Promise<GmailMessage[]> {
-        const promises = messageIds.map(id => this.getMessage(id));
-        return Promise.all(promises);
+        // Process messages in smaller batches to avoid rate limiting
+        return this.processBatch(messageIds, 5, async (batch) => {
+            const promises = batch.map(id => this.getMessage(id));
+            return Promise.all(promises);
+        });
     }
 
     async searchSubscriptions(): Promise<GmailMessage[]> {

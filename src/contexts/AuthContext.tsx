@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { db } from '../db';
+import { gmailService } from '../services/GmailService';
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
 const GOOGLE_SCOPES = [
-    'https://www.googleapis.com/auth/gmail.readonly'
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/userinfo.email'
 ].join(' ');
 
 interface AuthContextType {
@@ -43,17 +45,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const loadTokens = async () => {
             try {
                 const tokenRecord = await db.tokens.orderBy('updatedAt').reverse().first();
-                if (tokenRecord && tokenRecord.refreshToken) {
+                if (tokenRecord && tokenRecord.refreshToken && tokenRecord.accessToken) {
                     setAccessToken(tokenRecord.accessToken);
                     setIsAuthenticated(true);
                 }
             } catch (error) {
                 console.error('Error loading tokens from database:', error);
             }
+
+
         };
 
         loadTokens();
     }, []);
+
+    // Sync GmailService token whenever accessToken changes
+    useEffect(() => {
+        gmailService.setAccessToken(accessToken);
+    }, [accessToken]);
+
+    // Fetch initial emails after successful authentication
+    const fetchInitialEmails = async (token: string) => {
+        try {
+            console.log('Fetching initial emails...');
+
+            // Ensure GmailService has the token
+            gmailService.setAccessToken(token);
+
+            // Get recent messages (last 7 days to reduce API calls)
+            const messages = await gmailService.getRecentMessages(7);
+            console.log(`Fetched ${messages.length} recent messages`);
+
+            // Store raw emails in database
+            const now = Date.now();
+            for (const message of messages) {
+                await db.rawEmails.put({
+                    gmailId: message.id,
+                    threadId: message.threadId,
+                    subject: message.payload.headers.find(h => h.name === 'Subject')?.value || '',
+                    from: message.payload.headers.find(h => h.name === 'From')?.value || '',
+                    date: message.payload.headers.find(h => h.name === 'Date')?.value || '',
+                    body: message.snippet,
+                    snippet: message.snippet,
+                    labelIds: message.labelIds,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            }
+
+            console.log('Initial emails stored in database');
+        } catch (error) {
+            console.error('Error fetching initial emails:', error);
+            // Don't throw the error - just log it so the login still succeeds
+            console.log('Email fetching failed, but login was successful');
+        }
+    };
 
     const login = async (): Promise<void> => {
         try {
@@ -92,6 +138,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         setIsAuthenticated(true);
 
                         console.log('OAuth login successful');
+
+                        // Set token in GmailService immediately before fetching emails
+                        gmailService.setAccessToken(access_token);
+
+                        // Fetch initial emails after successful authentication
+                        await fetchInitialEmails(access_token);
+
                     } catch (error) {
                         console.error('Error saving tokens:', error);
                     }
