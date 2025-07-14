@@ -43,105 +43,54 @@ interface InboxDataProviderProps {
 }
 
 export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }) => {
-    // Initialize with stub data
-    const stubEmails: Email[] = [
-        {
-            id: 'sub-1',
-            subject: 'Your Netflix subscription has been renewed',
-            from: 'netflix@billing.netflix.com',
-            date: '2024-01-15T10:00:00Z',
-            body: 'Your Netflix Premium subscription has been renewed for $15.99/month. Next billing date: February 15, 2024.'
-        },
-        {
-            id: 'sub-2',
-            subject: 'Spotify Premium - Monthly Payment Confirmation',
-            from: 'billing@spotify.com',
-            date: '2024-01-14T09:30:00Z',
-            body: 'Your Spotify Premium subscription has been charged $9.99. Next billing: February 14, 2024.'
-        },
-        {
-            id: 'order-1',
-            subject: 'Your Amazon order has shipped',
-            from: 'shipment-tracking@amazon.com',
-            date: '2024-01-13T14:20:00Z',
-            body: 'Your order #123-4567890-1234567 has shipped. Total: $45.99. Expected delivery: January 16, 2024.'
-        },
-        {
-            id: 'order-2',
-            subject: 'Order Confirmation - Best Buy',
-            from: 'orders@bestbuy.com',
-            date: '2024-01-12T16:45:00Z',
-            body: 'Thank you for your order #BB123456. Total: $299.99. Your order is being processed.'
-        }
-    ];
-
-    const [rawEmails, setRawEmails] = useState<Email[]>(stubEmails);
+    const [rawEmails, setRawEmails] = useState<Email[]>([]);
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [unsubscribes, setUnsubscribes] = useState<string[]>([]);
 
-    // Add useEffect to load data from parsedItems and parse stub data
+    // Load data from database on initialization
     useEffect(() => {
         const loadData = async () => {
-            // Clear database to start fresh and prevent duplicates
-            await db.parsedItems.clear();
+            try {
+                console.log('Loading data from database...');
 
-            // Parse stub emails
-            console.log('Parsing stub emails...');
-            // Convert stub emails to GmailMessage format
-            const gmailMessages = stubEmails.map(email => ({
-                id: email.id,
-                threadId: email.id,
-                labelIds: [],
-                snippet: email.body,
-                historyId: '1',
-                internalDate: new Date(email.date).getTime().toString(),
-                payload: {
-                    partId: '',
-                    mimeType: 'text/plain',
-                    filename: '',
-                    headers: [
-                        { name: 'From', value: email.from },
-                        { name: 'Subject', value: email.subject },
-                        { name: 'Date', value: email.date }
-                    ],
-                    body: {
-                        size: email.body.length,
-                        data: btoa(email.body)
+                // Load raw emails from database
+                const rawEmailRecords = await db.rawEmails.toArray();
+                console.log(`Loaded ${rawEmailRecords.length} raw emails from database`);
+
+                const emails: Email[] = rawEmailRecords.map(record => ({
+                    id: record.gmailId,
+                    subject: record.subject,
+                    from: record.from,
+                    date: record.date,
+                    body: record.snippet,
+                }));
+
+                setRawEmails(emails);
+
+                // Load parsed items from database
+                const parsedItems = await db.parsedItems.toArray();
+                console.log(`Loaded ${parsedItems.length} parsed items from database`);
+
+                const subscriptions: Subscription[] = [];
+                const orders: Order[] = [];
+
+                parsedItems.forEach(item => {
+                    if (item.type === 'subscription') {
+                        subscriptions.push(item.data as Subscription);
+                    } else if (item.type === 'order') {
+                        orders.push(item.data as Order);
                     }
-                },
-                sizeEstimate: email.body.length
-            }));
+                });
 
-            // Parse the stub data
-            const parsedSubscriptions = parserService.parseSubscriptions(gmailMessages);
-            const parsedOrders = parserService.parseOrders(gmailMessages);
+                setSubscriptions(subscriptions);
+                setOrders(orders);
 
-            console.log('Parsed subscriptions:', parsedSubscriptions);
-            console.log('Parsed orders:', parsedOrders);
+                console.log(`Loaded ${subscriptions.length} subscriptions and ${orders.length} orders`);
 
-            setSubscriptions(parsedSubscriptions);
-            setOrders(parsedOrders);
-
-            // Store in database (clear existing data first to prevent duplicates)
-            const now = Date.now();
-            await db.parsedItems.clear(); // Clear existing data to prevent duplicates
-            await db.parsedItems.bulkPut([
-                ...parsedSubscriptions.map(sub => ({
-                    type: 'subscription' as const,
-                    emailId: sub.id,
-                    data: sub,
-                    createdAt: now,
-                    updatedAt: now
-                })),
-                ...parsedOrders.map(order => ({
-                    type: 'order' as const,
-                    emailId: order.id,
-                    data: order,
-                    createdAt: now,
-                    updatedAt: now
-                })),
-            ]);
+            } catch (error) {
+                console.error('Error loading data from database:', error);
+            }
         };
 
         loadData();
@@ -149,17 +98,41 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
 
     const reload = async (): Promise<void> => {
         try {
+            console.log('Reloading inbox data...');
+
             // Fetch raw emails from Gmail service
-            const recentMessages = await gmailService.getRecentMessages(30);
-            setRawEmails(recentMessages.map(msg => ({
+            const recentMessages = await gmailService.getRecentMessages(7);
+            console.log(`Fetched ${recentMessages.length} recent messages`);
+
+            // Convert to Email format and update state
+            const emails: Email[] = recentMessages.map(msg => ({
                 id: msg.id,
                 subject: msg.payload?.headers?.find(h => h.name === 'Subject')?.value || '',
                 from: msg.payload?.headers?.find(h => h.name === 'From')?.value || '',
                 date: msg.payload?.headers?.find(h => h.name === 'Date')?.value || '',
                 body: msg.snippet || '',
-            })));
+            }));
 
-            // Parse subscriptions and orders using service stubs
+            setRawEmails(emails);
+
+            // Store raw emails in database
+            const now = Date.now();
+            for (const message of recentMessages) {
+                await db.rawEmails.put({
+                    gmailId: message.id,
+                    threadId: message.threadId,
+                    subject: message.payload.headers.find(h => h.name === 'Subject')?.value || '',
+                    from: message.payload.headers.find(h => h.name === 'From')?.value || '',
+                    date: message.payload.headers.find(h => h.name === 'Date')?.value || '',
+                    body: message.snippet,
+                    snippet: message.snippet,
+                    labelIds: message.labelIds,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+            }
+
+            // Parse subscriptions and orders
             const subscriptions = parserService.parseSubscriptions(recentMessages);
             const orders = parserService.parseOrders(recentMessages);
 
@@ -167,7 +140,6 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             setOrders(orders);
 
             // Store parsed items in database
-            const now = Date.now();
             await db.parsedItems.bulkPut([
                 ...subscriptions.map(sub => ({
                     type: 'subscription' as const,
@@ -184,6 +156,8 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     updatedAt: now
                 })),
             ]);
+
+            console.log(`Parsed ${subscriptions.length} subscriptions and ${orders.length} orders`);
 
         } catch (error) {
             console.error('Failed to reload inbox data:', error);

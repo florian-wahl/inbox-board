@@ -1,14 +1,48 @@
-import React from 'react';
-import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel } from '@mui/material';
+import React, { useState } from 'react';
+import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel, Alert, Divider } from '@mui/material';
+import { purgeDatabase, getDatabaseStats } from '../utils/dbUtils';
 
 const Settings: React.FC = () => {
+    const [dbStats, setDbStats] = useState<{ tokens: number; rawEmails: number; parsedItems: number } | null>(null);
+    const [isPurging, setIsPurging] = useState(false);
+    const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
+
+    const handlePurgeDatabase = async () => {
+        if (window.confirm('Are you sure you want to purge all data? This will remove all emails, subscriptions, and orders. This action cannot be undone.')) {
+            setIsPurging(true);
+            setPurgeMessage(null);
+
+            try {
+                await purgeDatabase();
+                setPurgeMessage('Database purged successfully!');
+                // Refresh stats
+                const stats = await getDatabaseStats();
+                setDbStats(stats);
+            } catch (error) {
+                setPurgeMessage('Error purging database. Please try again.');
+                console.error('Purge error:', error);
+            } finally {
+                setIsPurging(false);
+            }
+        }
+    };
+
+    const handleGetStats = async () => {
+        try {
+            const stats = await getDatabaseStats();
+            setDbStats(stats);
+        } catch (error) {
+            console.error('Error getting stats:', error);
+        }
+    };
+
     return (
         <Box>
             <Typography variant="h4" gutterBottom>
                 Settings
             </Typography>
 
-            <Paper sx={{ p: 3, maxWidth: 600 }}>
+            <Paper sx={{ p: 3, maxWidth: 600, mb: 3 }}>
                 <Typography variant="h6" gutterBottom>
                     Gmail Account
                 </Typography>
@@ -55,6 +89,60 @@ const Settings: React.FC = () => {
                         Export Data (JSON)
                     </Button>
                 </Box>
+            </Paper>
+
+            <Paper sx={{ p: 3, maxWidth: 600 }}>
+                <Typography variant="h6" gutterBottom>
+                    Database Management
+                </Typography>
+
+                <Box sx={{ mb: 2 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={handleGetStats}
+                        sx={{ mr: 2 }}
+                    >
+                        Get Database Stats
+                    </Button>
+
+                    {dbStats && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Tokens: {dbStats.tokens} |
+                                Raw Emails: {dbStats.rawEmails} |
+                                Parsed Items: {dbStats.parsedItems}
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                <Typography variant="subtitle1" gutterBottom color="error">
+                    Danger Zone
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    This will permanently delete all stored emails, subscriptions, and orders from your device.
+                </Typography>
+
+                <Button
+                    variant="contained"
+                    color="error"
+                    onClick={handlePurgeDatabase}
+                    disabled={isPurging}
+                >
+                    {isPurging ? 'Purging...' : 'Purge All Data'}
+                </Button>
+
+                {purgeMessage && (
+                    <Alert
+                        severity={purgeMessage.includes('Error') ? 'error' : 'success'}
+                        sx={{ mt: 2 }}
+                    >
+                        {purgeMessage}
+                    </Alert>
+                )}
             </Paper>
         </Box>
     );
