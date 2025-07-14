@@ -127,16 +127,16 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     }
                 }
                 // Debug: Log the data being used
-                console.log(`Email ${record.gmailId}:`, {
-                    hasDecodedBody: !!record.decodedBody,
-                    decodedBodyLength: record.decodedBody?.length || 0,
-                    hasBody: !!record.body,
-                    bodyLength: record.body?.length || 0,
-                    snippetLength: record.snippet?.length || 0,
-                    finalBodyDataLength: bodyData.length,
-                    bodyDataSample: bodyData.substring(0, 100) + '...',
-                    isBase64: isBase64(bodyData)
-                });
+                // console.log(`Email ${record.gmailId}:`, {
+                //     hasDecodedBody: !!record.decodedBody,
+                //     decodedBodyLength: record.decodedBody?.length || 0,
+                //     hasBody: !!record.body,
+                //     bodyLength: record.body?.length || 0,
+                //     snippetLength: record.snippet?.length || 0,
+                //     finalBodyDataLength: bodyData.length,
+                //     bodyDataSample: bodyData.substring(0, 100) + '...',
+                //     isBase64: isBase64(bodyData)
+                // });
 
                 return {
                     id: record.gmailId,

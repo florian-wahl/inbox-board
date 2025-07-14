@@ -93,6 +93,7 @@ export class GmailService {
             params.append('pageToken', pageToken);
         }
 
+        console.log('[Gmail API] listMessages called', { query, maxResults, pageToken });
         return this.makeRequest<GmailListResponse>(`/messages?${params.toString()}`);
     }
 
@@ -103,12 +104,14 @@ export class GmailService {
             metadataHeaders: 'From,Subject,Date,List-Unsubscribe'
         });
 
+        console.log('[Gmail API] getMessage called', { messageId });
         const message = await this.makeRequest<GmailMessage>(`/messages/${messageId}?${params.toString()}`);
 
         return message;
     }
 
     async getMessages(messageIds: string[]): Promise<GmailMessage[]> {
+        console.log('[Gmail API] getMessages called', { messageIds });
         // Process messages in smaller batches to avoid rate limiting
         return this.processBatch(messageIds, 5, async (batch) => {
             const promises = batch.map(id => this.getMessage(id));
@@ -118,6 +121,7 @@ export class GmailService {
 
     async searchSubscriptions(): Promise<GmailMessage[]> {
         const query = 'subject:(subscription OR renewal OR billing OR payment)';
+        console.log('[Gmail API] searchSubscriptions called');
         const response = await this.listMessages(query, 50);
 
         if (response.messages) {
@@ -129,6 +133,7 @@ export class GmailService {
 
     async searchOrders(): Promise<GmailMessage[]> {
         const query = 'subject:(order OR purchase OR receipt OR confirmation OR shipped OR delivered)';
+        console.log('[Gmail API] searchOrders called');
         const response = await this.listMessages(query, 50);
 
         if (response.messages) {
@@ -142,7 +147,7 @@ export class GmailService {
         const date = new Date();
         date.setDate(date.getDate() - days);
         const query = `after:${date.toISOString().split('T')[0]}`;
-
+        console.log('[Gmail API] getRecentMessages called', { days, query });
         const response = await this.listMessages(query, 100);
 
         if (response.messages) {
@@ -156,7 +161,7 @@ export class GmailService {
         const params = new URLSearchParams({
             startHistoryId: historyId,
         });
-
+        console.log('[Gmail API] getIncrementalMessages called', { historyId });
         const response = await this.makeRequest<{ history: any[] }>(`/history?${params.toString()}`);
 
         // Process history to get new messages
