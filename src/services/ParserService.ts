@@ -47,7 +47,16 @@ export class ParserService {
 
         const currency = extractCurrency(body);
         const billingDate = extractDate(body);
-        const merchant = extractMerchant(body) || this.extractMerchantFromEmail(from);
+        // Improved merchant extraction logic
+        let merchant = null;
+        // Try COMMON pattern only
+        const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
+        const commonMatch = (subject + ' ' + body).match(commonPattern);
+        if (commonMatch) {
+            merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
+        } else {
+            merchant = this.extractMerchantFromEmail(from);
+        }
 
         if (!currency || !billingDate || !merchant) {
             return null;
@@ -78,7 +87,16 @@ export class ParserService {
 
         const currency = extractCurrency(body);
         const orderDate = extractDate(body) || new Date(date);
-        const merchant = extractMerchant(body) || this.extractMerchantFromEmail(from);
+        // Improved merchant extraction logic
+        let merchant = null;
+        // Try COMMON pattern only
+        const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
+        const commonMatch = (subject + ' ' + body).match(commonPattern);
+        if (commonMatch) {
+            merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
+        } else {
+            merchant = this.extractMerchantFromEmail(from);
+        }
 
         if (!currency || !merchant) {
             return null;
