@@ -30,11 +30,12 @@ export const EMAIL_PATTERNS = {
 
 export const extractCurrency = (text: string): { amount: number; currency: string } | null => {
     for (const [currency, pattern] of Object.entries(CURRENCY_PATTERNS)) {
-        const match = text.match(pattern);
+        pattern.lastIndex = 0; // Reset regex state for global patterns
+        const match = pattern.exec(text);
         if (match) {
             return {
                 amount: parseFloat(match[1]),
-                currency: currency === 'GENERIC' ? match[2] : currency,
+                currency: currency === 'GENERIC' ? (match[2] || currency) : currency,
             };
         }
     }

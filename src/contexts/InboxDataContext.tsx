@@ -43,26 +43,105 @@ interface InboxDataProviderProps {
 }
 
 export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }) => {
-    const [rawEmails, setRawEmails] = useState<Email[]>([]);
+    // Initialize with stub data
+    const stubEmails: Email[] = [
+        {
+            id: 'sub-1',
+            subject: 'Your Netflix subscription has been renewed',
+            from: 'netflix@billing.netflix.com',
+            date: '2024-01-15T10:00:00Z',
+            body: 'Your Netflix Premium subscription has been renewed for $15.99/month. Next billing date: February 15, 2024.'
+        },
+        {
+            id: 'sub-2',
+            subject: 'Spotify Premium - Monthly Payment Confirmation',
+            from: 'billing@spotify.com',
+            date: '2024-01-14T09:30:00Z',
+            body: 'Your Spotify Premium subscription has been charged $9.99. Next billing: February 14, 2024.'
+        },
+        {
+            id: 'order-1',
+            subject: 'Your Amazon order has shipped',
+            from: 'shipment-tracking@amazon.com',
+            date: '2024-01-13T14:20:00Z',
+            body: 'Your order #123-4567890-1234567 has shipped. Total: $45.99. Expected delivery: January 16, 2024.'
+        },
+        {
+            id: 'order-2',
+            subject: 'Order Confirmation - Best Buy',
+            from: 'orders@bestbuy.com',
+            date: '2024-01-12T16:45:00Z',
+            body: 'Thank you for your order #BB123456. Total: $299.99. Your order is being processed.'
+        }
+    ];
+
+    const [rawEmails, setRawEmails] = useState<Email[]>(stubEmails);
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [unsubscribes, setUnsubscribes] = useState<string[]>([]);
 
-    // Add useEffect to load data from parsedItems
+    // Add useEffect to load data from parsedItems and parse stub data
     useEffect(() => {
         const loadData = async () => {
-            const parsedItems = await db.parsedItems.toArray();
+            // Clear database to start fresh and prevent duplicates
+            await db.parsedItems.clear();
 
-            const subscriptions = parsedItems
-                .filter(item => item.type === 'subscription')
-                .map(item => item.data);
+            // Parse stub emails
+            console.log('Parsing stub emails...');
+            // Convert stub emails to GmailMessage format
+            const gmailMessages = stubEmails.map(email => ({
+                id: email.id,
+                threadId: email.id,
+                labelIds: [],
+                snippet: email.body,
+                historyId: '1',
+                internalDate: new Date(email.date).getTime().toString(),
+                payload: {
+                    partId: '',
+                    mimeType: 'text/plain',
+                    filename: '',
+                    headers: [
+                        { name: 'From', value: email.from },
+                        { name: 'Subject', value: email.subject },
+                        { name: 'Date', value: email.date }
+                    ],
+                    body: {
+                        size: email.body.length,
+                        data: btoa(email.body)
+                    }
+                },
+                sizeEstimate: email.body.length
+            }));
 
-            const orders = parsedItems
-                .filter(item => item.type === 'order')
-                .map(item => item.data);
+            // Parse the stub data
+            const parsedSubscriptions = parserService.parseSubscriptions(gmailMessages);
+            const parsedOrders = parserService.parseOrders(gmailMessages);
 
-            setSubscriptions(subscriptions);
-            setOrders(orders);
+            console.log('Parsed subscriptions:', parsedSubscriptions);
+            console.log('Parsed orders:', parsedOrders);
+
+            setSubscriptions(parsedSubscriptions);
+            setOrders(parsedOrders);
+
+            // Store in database (clear existing data first to prevent duplicates)
+            const now = Date.now();
+            await db.parsedItems.clear(); // Clear existing data to prevent duplicates
+            await db.parsedItems.bulkPut([
+                ...parsedSubscriptions.map(sub => ({
+                    type: 'subscription' as const,
+                    emailId: sub.id,
+                    data: sub,
+                    createdAt: now,
+                    updatedAt: now
+                })),
+                ...parsedOrders.map(order => ({
+                    type: 'order' as const,
+                    emailId: order.id,
+                    data: order,
+                    createdAt: now,
+                    updatedAt: now
+                })),
+            ]);
         };
 
         loadData();

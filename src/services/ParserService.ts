@@ -213,11 +213,33 @@ export class ParserService {
     }
 
     parseSubscriptions(messages: GmailMessage[]): Subscription[] {
-        return [];
+        const subscriptions: Subscription[] = [];
+        const seenIds = new Set<string>();
+
+        for (const message of messages) {
+            const subscription = this.parseSubscription(message);
+            if (subscription && !seenIds.has(subscription.id)) {
+                seenIds.add(subscription.id);
+                subscriptions.push(subscription);
+            }
+        }
+
+        return subscriptions;
     }
 
     parseOrders(messages: GmailMessage[]): Order[] {
-        return [];
+        const orders: Order[] = [];
+        const seenIds = new Set<string>();
+
+        for (const message of messages) {
+            const order = this.parseOrder(message);
+            if (order && !seenIds.has(order.id)) {
+                seenIds.add(order.id);
+                orders.push(order);
+            }
+        }
+
+        return orders;
     }
 }
 

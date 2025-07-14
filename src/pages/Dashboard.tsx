@@ -52,7 +52,7 @@ const Dashboard: React.FC = () => {
                                                 {order.merchant}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                ${order.amount} - {new Date(order.date).toLocaleDateString()}
+                                                ${isNaN(order.amount) || order.amount === undefined ? '0.00' : order.amount} - {new Date(order.date).toLocaleDateString()}
                                             </Typography>
                                         </Box>
                                     ))}
