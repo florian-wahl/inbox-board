@@ -4,6 +4,28 @@ import { Order } from '../types/order';
 import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence, getOrderEmailKeyword } from '../utils/regex';
 import { formatDate } from '../utils/date';
 import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
+import { ParsedUnsubscribeRecord } from '../db/schema';
+
+// Type alias for DB record
+export type UnsubscribeSenderDB = ParsedUnsubscribeRecord;
+
+// Helper to convert from DB record to UnsubscribeSender
+export function unsubscribeSenderFromDB(record: ParsedUnsubscribeRecord): UnsubscribeSender {
+    // DB uses gmailId, UnsubscribeSender does not have id, so just omit gmailId
+    // If you want to add id to UnsubscribeSender, you can do so here
+    const { gmailId, ...rest } = record;
+    return {
+        ...rest,
+    } as UnsubscribeSender;
+}
+
+// Helper to convert from UnsubscribeSender to DB record
+export function unsubscribeSenderToDB(sender: UnsubscribeSender, gmailId: string): ParsedUnsubscribeRecord {
+    return {
+        gmailId,
+        ...sender,
+    } as ParsedUnsubscribeRecord;
+}
 
 // Utility function for safe base64 decoding to UTF-8
 function safeBase64DecodeUTF8(data: string): string {

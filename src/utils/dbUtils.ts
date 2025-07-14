@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { UserPreferencesRecord } from '../db/schema';
+import { UserPreferencesRecord, ParsedOrderRecord, ParsedSubscriptionRecord, ParsedUnsubscribeRecord } from '../db/schema';
 
 export const purgeDatabase = async (): Promise<void> => {
     try {
@@ -101,4 +101,34 @@ export const setUserPreferences = async (prefs: Partial<UserPreferencesRecord>):
     } else {
         await db.userPreferences.put({ id: 1, batchSize: prefs.batchSize ?? 20, dateRange: prefs.dateRange ?? 30, theme: prefs.theme ?? 'system', ...prefs });
     }
+};
+
+// Insert a parsed order if gmailId does not already exist
+export const insertParsedOrder = async (order: ParsedOrderRecord): Promise<boolean> => {
+    const existing = await db.parsedOrders.get(order.gmailId);
+    if (!existing) {
+        await db.parsedOrders.put(order);
+        return true;
+    }
+    return false;
+};
+
+// Insert a parsed subscription if gmailId does not already exist
+export const insertParsedSubscription = async (subscription: ParsedSubscriptionRecord): Promise<boolean> => {
+    const existing = await db.parsedSubscriptions.get(subscription.gmailId);
+    if (!existing) {
+        await db.parsedSubscriptions.put(subscription);
+        return true;
+    }
+    return false;
+};
+
+// Insert a parsed unsubscribe entry if gmailId does not already exist
+export const insertParsedUnsubscribe = async (unsubscribe: ParsedUnsubscribeRecord): Promise<boolean> => {
+    const existing = await db.parsedUnsubscribeList.get(unsubscribe.gmailId);
+    if (!existing) {
+        await db.parsedUnsubscribeList.put(unsubscribe);
+        return true;
+    }
+    return false;
 }; 

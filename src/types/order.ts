@@ -1,3 +1,5 @@
+import { ParsedOrderRecord } from '../db/schema';
+
 export interface Order {
     id: string;
     orderNumber: string;
@@ -51,4 +53,25 @@ export interface TrackingInfo {
     trackingNumber: string;
     status: string;
     estimatedDelivery?: string;
+}
+
+// Type alias for DB record
+export type OrderDB = ParsedOrderRecord;
+
+// Helper to convert from DB record to Order
+export function orderFromDB(record: ParsedOrderRecord): Order {
+    const { gmailId, ...rest } = record;
+    return {
+        id: gmailId,
+        ...rest,
+    } as Order;
+}
+
+// Helper to convert from Order to DB record
+export function orderToDB(order: Order): ParsedOrderRecord {
+    const { id, ...rest } = order;
+    return {
+        gmailId: id,
+        ...rest,
+    } as ParsedOrderRecord;
 } 

@@ -61,18 +61,77 @@ export interface GmailMessageBody {
     data?: string;
 }
 
+// Add Order, Subscription, and UnsubscribeSender DB records
+export interface ParsedOrderRecord {
+    gmailId: string; // Use Gmail message id as unique key
+    orderNumber: string;
+    merchant: string;
+    amount: number;
+    currency: string;
+    date: string;
+    status: 'pending' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+    refundStatus: 'none' | 'partial' | 'full';
+    emailId: string;
+    items: any[]; // OrderItem[]
+    createdAt: string;
+    updatedAt: string;
+    from: string;
+    subject: string;
+    to?: string;
+    labelIds?: string[];
+    headers?: { name: string; value: string }[];
+    orderMatchKeyword?: string | null;
+}
+
+export interface ParsedSubscriptionRecord {
+    gmailId: string; // Use Gmail message id as unique key
+    merchant: string;
+    plan: string;
+    nextBilling: string;
+    amount: number;
+    currency: string;
+    billingCycle: string;
+    status: 'active' | 'cancelled' | 'paused';
+    emailId: string;
+    createdAt: string;
+    updatedAt: string;
+    from: string;
+    subject: string;
+    to?: string;
+    date: string;
+    labelIds?: string[];
+    headers?: { name: string; value: string }[];
+}
+
+export interface ParsedUnsubscribeRecord {
+    gmailId: string; // Use Gmail message id as unique key
+    domain: string;
+    from: string;
+    subject: string;
+    to?: string;
+    date: string;
+    labelIds?: string[];
+    listUnsubscribe?: string;
+}
+
 export class InboxBoardDB extends Dexie {
     tokens!: Table<TokenRecord>;
     rawEmails!: Table<RawEmailRecord>;
     userPreferences!: Table<UserPreferencesRecord>;
+    parsedOrders!: Table<ParsedOrderRecord>;
+    parsedSubscriptions!: Table<ParsedSubscriptionRecord>;
+    parsedUnsubscribeList!: Table<ParsedUnsubscribeRecord>;
 
     constructor() {
         super('InboxBoardDB');
 
-        this.version(4).stores({
+        this.version(5).stores({
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
-            rawEmails: '++id, &gmailId, threadId, from, date, historyId', // gmailId is now unique
+            rawEmails: '++id, &gmailId, threadId, from, date, historyId',
             userPreferences: '++id',
+            parsedOrders: '&gmailId, merchant, date',
+            parsedSubscriptions: '&gmailId, merchant, nextBilling',
+            parsedUnsubscribeList: '&gmailId, domain, from',
         });
     }
 }
