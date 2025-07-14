@@ -250,8 +250,10 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             const messageIds = response.messages?.map((msg: any) => msg.id) || [];
             pageToken = response.nextPageToken;
             if (messageIds.length === 0) break;
-            const existingIds = await db.rawEmails.where('gmailId').anyOf(messageIds).primaryKeys();
-            const newIds = messageIds.filter((id: string) => !existingIds.includes(id));
+            // Get all existing gmailIds in the DB for this batch
+            const existingRecords = await db.rawEmails.where('gmailId').anyOf(messageIds).toArray();
+            const existingGmailIds = new Set(existingRecords.map(e => e.gmailId));
+            const newIds = messageIds.filter((id: string) => !existingGmailIds.has(id));
             // If there are no new IDs and no nextPageToken, or no messageIds at all, break
             if ((newIds.length === 0 && !pageToken) || messageIds.length === 0) break;
             let messages: GmailMessage[] = [];
