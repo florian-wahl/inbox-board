@@ -99,6 +99,6 @@ export const setUserPreferences = async (prefs: Partial<UserPreferencesRecord>):
     if (existing) {
         await db.userPreferences.update(1, { ...existing, ...prefs });
     } else {
-        await db.userPreferences.put({ id: 1, batchSize: prefs.batchSize ?? 20, dateRange: prefs.dateRange ?? 30, ...prefs });
+        await db.userPreferences.put({ id: 1, batchSize: prefs.batchSize ?? 20, dateRange: prefs.dateRange ?? 30, theme: prefs.theme ?? 'system', ...prefs });
     }
 }; 

@@ -37,6 +37,7 @@ export interface UserPreferencesRecord {
     id?: number;
     batchSize: number;
     dateRange: number;
+    theme?: 'light' | 'dark' | 'system'; // Add this line
     settings?: Record<string, any>; // For future extensibility
 }
 

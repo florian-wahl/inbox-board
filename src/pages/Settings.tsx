@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel, Alert, Divider } from '@mui/material';
+import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel, Alert, Divider, FormControl, FormLabel, RadioGroup, Radio } from '@mui/material';
 import { purgeDatabase, getDatabaseStats, decodeExistingEmails, getUserPreferences, setUserPreferences } from '../utils/dbUtils';
 import { useInboxData } from '../contexts/InboxDataContext';
 import LinearProgress from '@mui/material/LinearProgress';
+import { useUI, ThemeMode } from '../contexts/UIContext';
 
 const Settings: React.FC = () => {
     const [dbStats, setDbStats] = useState<{ tokens: number; rawEmails: number } | null>(null);
@@ -11,6 +12,7 @@ const Settings: React.FC = () => {
     const [isDecoding, setIsDecoding] = useState(false);
     const [decodeMessage, setDecodeMessage] = useState<string | null>(null);
     const { testParsing, reload, loadingProgress, loadingTotal, loadingActive } = useInboxData();
+    const { theme, setTheme } = useUI();
 
     // New state for batch size, date range, and progress bar
     const [batchSize, setBatchSize] = useState<number>(20);
@@ -185,6 +187,23 @@ const Settings: React.FC = () => {
                     control={<Switch />}
                     label="Show progress bar"
                 />
+
+                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                    Appearance
+                </Typography>
+                <FormControl component="fieldset" sx={{ mb: 2 }}>
+                    <FormLabel component="legend">Theme</FormLabel>
+                    <RadioGroup
+                        row
+                        value={theme}
+                        onChange={e => setTheme(e.target.value as ThemeMode)}
+                        name="theme-mode"
+                    >
+                        <FormControlLabel value="light" control={<Radio />} label="Light" />
+                        <FormControlLabel value="dark" control={<Radio />} label="Dark" />
+                        <FormControlLabel value="system" control={<Radio />} label="System" />
+                    </RadioGroup>
+                </FormControl>
 
                 <Box sx={{ mt: 3 }}>
                     <Button variant="contained" color="primary">

@@ -8,18 +8,38 @@ import { UIProvider } from './contexts/UIContext';
 import AppRouter from './router';
 import { useAuth } from './contexts/AuthContext';
 import { useInboxData } from './contexts/InboxDataContext';
+import { useUI } from './contexts/UIContext';
 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
+function DynamicThemeProvider({ children }: { children: React.ReactNode }) {
+  const { theme } = useUI();
+  const [resolvedMode, setResolvedMode] = React.useState<'light' | 'dark'>('light');
+
+  React.useEffect(() => {
+    if (theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const updateMode = () => setResolvedMode(mq.matches ? 'dark' : 'light');
+      updateMode();
+      mq.addEventListener('change', updateMode);
+      return () => mq.removeEventListener('change', updateMode);
+    } else {
+      setResolvedMode(theme);
+    }
+  }, [theme]);
+
+  const muiTheme = React.useMemo(() => createTheme({
+    palette: {
+      mode: resolvedMode,
+      primary: {
+        main: '#1976d2',
+      },
+      secondary: {
+        main: '#dc004e',
+      },
     },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+  }), [resolvedMode]);
+
+  return <ThemeProvider theme={muiTheme}><CssBaseline />{children}</ThemeProvider>;
+}
 
 function AppInitializer() {
   const { isAuthenticated, accessToken } = useAuth();
@@ -44,16 +64,15 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <InboxDataProvider>
-          <UIProvider>
+    <AuthProvider>
+      <InboxDataProvider>
+        <UIProvider>
+          <DynamicThemeProvider>
             <AppInitializer />
             <AppRouter />
-          </UIProvider>
-        </InboxDataProvider>
-      </AuthProvider>
-    </ThemeProvider>
+          </DynamicThemeProvider>
+        </UIProvider>
+      </InboxDataProvider>
+    </AuthProvider>
   </React.StrictMode>
 );

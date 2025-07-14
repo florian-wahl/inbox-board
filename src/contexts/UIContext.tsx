@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { getUserPreferences, setUserPreferences } from '../utils/dbUtils';
+
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 interface UIContextType {
     isBottomSheetOpen: boolean;
@@ -10,6 +13,8 @@ interface UIContextType {
     showProgressBar: () => void;
     hideProgressBar: () => void;
     updateProgress: (value: number) => void;
+    theme: ThemeMode;
+    setTheme: (mode: ThemeMode) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -23,6 +28,24 @@ export const UIProvider: React.FC<UIProviderProps> = ({ children }) => {
     const [bottomSheetContent, setBottomSheetContent] = useState<ReactNode | null>(null);
     const [isProgressBarVisible, setIsProgressBarVisible] = useState(false);
     const [progressValue, setProgressValue] = useState(0);
+    const [theme, setThemeState] = React.useState<ThemeMode>('system');
+
+    React.useEffect(() => {
+        (async () => {
+            const prefs = await getUserPreferences();
+            if (prefs?.theme) {
+                setThemeState(prefs.theme);
+            } else {
+                // Default to system
+                setThemeState('system');
+            }
+        })();
+    }, []);
+
+    const setTheme = (mode: ThemeMode) => {
+        setThemeState(mode);
+        setUserPreferences({ theme: mode });
+    };
 
     const openBottomSheet = (content: ReactNode): void => {
         setBottomSheetContent(content);
@@ -57,6 +80,8 @@ export const UIProvider: React.FC<UIProviderProps> = ({ children }) => {
         showProgressBar,
         hideProgressBar,
         updateProgress,
+        theme,
+        setTheme,
     };
 
     return (
