@@ -18,6 +18,16 @@ function safeBase64DecodeUTF8(data: string): string {
     }
 }
 
+// New Unsubscribe type for richer data
+export type UnsubscribeSender = {
+    domain: string;
+    from: string;
+    subject: string;
+    to?: string;
+    date: string;
+    labelIds?: string[];
+};
+
 export class ParserService {
 
 
@@ -325,51 +335,68 @@ export class ParserService {
         return orders;
     }
 
-    parseUnsubscribes(messages: GmailMessage[]): string[] {
-        const unsubscribes: string[] = [];
-        const seenSenders = new Set<string>();
+    parseUnsubscribes(messages: GmailMessage[]): UnsubscribeSender[] {
+        const unsubMap = new Map<string, UnsubscribeSender>();
 
         for (const message of messages) {
             const body = this.extractEmailBody(message);
-            const { from } = this.extractEmailHeaders(message);
+            const { from, subject, date, to } = this.extractEmailHeaders(message);
             const headers = message.payload.headers;
+            const labelIds = message.labelIds;
 
             // Check if email contains unsubscribe links
             if (isUnsubscribeEmail(body, headers)) {
                 // Extract sender domain from email address
-                const senderDomain = this.extractMainDomainFromEmail(from);
-                if (senderDomain && !seenSenders.has(senderDomain)) {
-                    seenSenders.add(senderDomain);
-                    unsubscribes.push(senderDomain);
+                const domain = this.extractMainDomainFromEmail(from);
+                // Only keep the most recent email for each domain (by date)
+                if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
+                    unsubMap.set(domain, {
+                        domain,
+                        from,
+                        subject,
+                        to,
+                        date,
+                        labelIds,
+                    });
                 }
             }
         }
 
-        return unsubscribes;
+        return Array.from(unsubMap.values());
     }
 
     // New method to parse unsubscribes from database records
-    parseUnsubscribesFromRecords(records: any[]): string[] {
-        const unsubscribes: string[] = [];
-        const seenSenders = new Set<string>();
+    parseUnsubscribesFromRecords(records: any[]): UnsubscribeSender[] {
+        const unsubMap = new Map<string, UnsubscribeSender>();
 
         for (const record of records) {
             const body = this.extractEmailBodyFromRecord(record);
             const from = record.from || '';
+            const subject = record.subject || '';
+            const to = record.to || '';
+            const date = record.date || '';
+            const labelIds = record.labelIds || [];
             const headers = record.allHeaders || [];
 
             // Check if email contains unsubscribe links
             if (isUnsubscribeEmail(body, headers)) {
                 // Extract sender domain from email address
-                const senderDomain = this.extractMainDomainFromEmail(from);
-                if (senderDomain && !seenSenders.has(senderDomain)) {
-                    seenSenders.add(senderDomain);
-                    unsubscribes.push(senderDomain);
+                const domain = this.extractMainDomainFromEmail(from);
+                // Only keep the most recent email for each domain (by date)
+                if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
+                    unsubMap.set(domain, {
+                        domain,
+                        from,
+                        subject,
+                        to,
+                        date,
+                        labelIds,
+                    });
                 }
             }
         }
 
-        return unsubscribes;
+        return Array.from(unsubMap.values());
     }
 }
 

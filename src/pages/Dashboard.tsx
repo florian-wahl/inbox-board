@@ -107,6 +107,58 @@ function CollapsibleSubscriptionRow({ subscription }: { subscription: any }) {
     );
 }
 
+function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
+    const [open, setOpen] = React.useState(false);
+    return (
+        <>
+            <TableRow sx={{ '& > *': { borderBottom: 'unset' }, cursor: 'pointer' }} onClick={() => setOpen(!open)}>
+                <TableCell sx={{ width: 40, p: 0 }}>
+                    <IconButton aria-label="expand row" size="small">
+                        {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>{sender.domain}</TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={2}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box margin={1}>
+                            <Typography variant="subtitle2">
+                                <Typography component="span" fontWeight="bold">Sender Domain:</Typography> {sender.domain}
+                            </Typography>
+                            {sender.from && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">From:</Typography> {sender.from}
+                                </Typography>
+                            )}
+                            {sender.subject && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Subject:</Typography> {sender.subject}
+                                </Typography>
+                            )}
+                            {sender.to && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">To:</Typography> {sender.to}
+                                </Typography>
+                            )}
+                            {sender.date && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Sent:</Typography> {new Date(sender.date).toLocaleString()}
+                                </Typography>
+                            )}
+                            {sender.labelIds && sender.labelIds.length > 0 && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Labels:</Typography> {sender.labelIds.join(', ')}
+                                </Typography>
+                            )}
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </>
+    );
+}
+
 const Dashboard: React.FC = () => {
     const { subscriptions, orders, unsubscribes, reload } = useInboxData();
 
@@ -179,7 +231,15 @@ const Dashboard: React.FC = () => {
                             Unsubscribe List ({unsubscribes.length})
                         </Typography>
                         {unsubscribes.length > 0 ? (
-                            <UnsubscribeList senders={unsubscribes} />
+                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                <Table size="small" aria-label="collapsible table">
+                                    <TableBody>
+                                        {unsubscribes.map((sender) => (
+                                            <CollapsibleUnsubscribeRow key={sender.domain} sender={sender} />
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         ) : (
                             <Typography variant="body2" color="text.secondary">
                                 No high-noise senders found

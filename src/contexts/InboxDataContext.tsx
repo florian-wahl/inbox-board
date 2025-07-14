@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { db } from '../db';
 import { gmailService } from '../services/GmailService';
-import { parserService } from '../services/ParserService';
+import { parserService, UnsubscribeSender } from '../services/ParserService';
 
 interface Email {
     id: string;
@@ -39,7 +39,7 @@ interface InboxDataContextType {
     rawEmails: Email[];
     subscriptions: Subscription[];
     orders: Order[];
-    unsubscribes: string[];
+    unsubscribes: UnsubscribeSender[];
     reload: () => Promise<void>;
     extendHistory: () => Promise<void>;
     testParsing: () => Promise<void>; // Add test function to context
@@ -56,7 +56,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     const [rawEmails, setRawEmails] = useState<Email[]>([]);
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
-    const [unsubscribes, setUnsubscribes] = useState<string[]>([]);
+    const [unsubscribes, setUnsubscribes] = useState<UnsubscribeSender[]>([]);
     const [lastEmailCount, setLastEmailCount] = useState<number>(0);
 
     // Helper function to safely encode data to Base64
