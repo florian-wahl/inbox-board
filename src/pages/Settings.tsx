@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Box, Typography, TextField, Button, Switch, FormControlLabel, Alert, Divider, FormControl, FormLabel, RadioGroup, Radio } from '@mui/material';
-import { purgeDatabase, getUserPreferences, setUserPreferences } from '../utils/dbUtils';
+import { purgeDatabase, getUserPreferences, setUserPreferences, purgeEmailData } from '../utils/dbUtils';
 import { useInboxData } from '../contexts/InboxDataContext';
 import { useUI, ThemeMode } from '../contexts/UIContext';
 
 const Settings: React.FC = () => {
     const [isPurging, setIsPurging] = useState(false);
     const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
+    const [isPurgingEmailData, setIsPurgingEmailData] = useState(false);
+    const [purgeEmailDataMessage, setPurgeEmailDataMessage] = useState<string | null>(null);
     const { reload } = useInboxData();
     const { theme, setTheme } = useUI();
 
@@ -44,6 +46,22 @@ const Settings: React.FC = () => {
                 console.error('Purge error:', error);
             } finally {
                 setIsPurging(false);
+            }
+        }
+    };
+
+    const handlePurgeEmailData = async () => {
+        if (window.confirm('Are you sure you want to purge all email data? This will remove all emails, subscriptions, and orders, but keep your login token. This action cannot be undone.')) {
+            setIsPurgingEmailData(true);
+            setPurgeEmailDataMessage(null);
+            try {
+                await purgeEmailData();
+                setPurgeEmailDataMessage('Email data purged successfully!');
+            } catch (error) {
+                setPurgeEmailDataMessage('Error purging email data. Please try again.');
+                console.error('Purge email data error:', error);
+            } finally {
+                setIsPurgingEmailData(false);
             }
         }
     };
@@ -124,9 +142,29 @@ const Settings: React.FC = () => {
                         </Typography>
 
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            This will permanently delete all stored emails, subscriptions, and orders from your device.
+                            This will permanently delete all stored emails, subscriptions, and orders from your device, but keep your login token.
                         </Typography>
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            onClick={handlePurgeEmailData}
+                            disabled={isPurgingEmailData}
+                            sx={{ mb: 2 }}
+                        >
+                            {isPurgingEmailData ? 'Purging Email Data...' : 'Purge Email Data'}
+                        </Button>
+                        {purgeEmailDataMessage && (
+                            <Alert
+                                severity={purgeEmailDataMessage.includes('Error') ? 'error' : 'success'}
+                                sx={{ mt: 2 }}
+                            >
+                                {purgeEmailDataMessage}
+                            </Alert>
+                        )}
 
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            This will permanently delete all stored emails, subscriptions, orders, and login tokens from your device.
+                        </Typography>
                         <Button
                             variant="contained"
                             color="error"
@@ -135,7 +173,6 @@ const Settings: React.FC = () => {
                         >
                             {isPurging ? 'Purging...' : 'Purge All Data'}
                         </Button>
-
                         {purgeMessage && (
                             <Alert
                                 severity={purgeMessage.includes('Error') ? 'error' : 'success'}

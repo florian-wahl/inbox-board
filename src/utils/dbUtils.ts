@@ -30,8 +30,17 @@ export const getDatabaseStats = async (): Promise<{
     }
 };
 
-
-
+export const purgeEmailData = async (): Promise<void> => {
+    try {
+        await db.rawEmails.clear();
+        await db.parsedOrders.clear();
+        await db.parsedSubscriptions.clear();
+        await db.parsedUnsubscribes.clear();
+    } catch (error) {
+        console.error('Error purging email data:', error);
+        throw error;
+    }
+};
 
 
 export const decodeExistingEmails = async (): Promise<{ updated: number; total: number }> => {
