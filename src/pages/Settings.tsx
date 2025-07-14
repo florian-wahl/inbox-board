@@ -132,172 +132,178 @@ const Settings: React.FC = () => {
                 Settings
             </Typography>
 
-            <Paper sx={{ p: 3, maxWidth: 600, mb: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    Gmail Account
-                </Typography>
-                <TextField
-                    fullWidth
-                    label="Gmail Account"
-                    margin="normal"
-                    disabled
-                    value="user@gmail.com"
-                />
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ width: '100%', maxWidth: 800 }}>
+                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Gmail Account
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            label="Gmail Account"
+                            margin="normal"
+                            disabled
+                            value="user@gmail.com"
+                        />
 
-                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                    Sync Settings
-                </Typography>
-                <TextField
-                    fullWidth
-                    label="Batch Size"
-                    type="number"
-                    margin="normal"
-                    value={batchSize}
-                    onChange={e => setBatchSize(Number(e.target.value))}
-                    inputProps={{ min: 1, max: 100 }}
-                />
-                <TextField
-                    fullWidth
-                    label="Date Range (days)"
-                    type="number"
-                    margin="normal"
-                    value={dateRange}
-                    onChange={e => setDateRange(Number(e.target.value))}
-                    inputProps={{ min: 1, max: 365 }}
-                />
-                <FormControlLabel
-                    control={<Switch checked={showProgressBar} onChange={e => setShowProgressBar(e.target.checked)} />}
-                    label="Show progress bar during email loading"
-                />
-                <Box sx={{ mt: 2 }}>
-                    <Button variant="contained" color="primary" onClick={handleReloadWithSettings}>
-                        Reload Emails with New Settings
-                    </Button>
-                </Box>
-                {/* Remove visual progress bar and loading count from here */}
-
-                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                    Preferences
-                </Typography>
-                <FormControlLabel
-                    control={<Switch defaultChecked />}
-                    label="Auto-sync on startup"
-                />
-                <FormControlLabel
-                    control={<Switch />}
-                    label="Show progress bar"
-                />
-
-                <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                    Appearance
-                </Typography>
-                <FormControl component="fieldset" sx={{ mb: 2 }}>
-                    <FormLabel component="legend">Theme</FormLabel>
-                    <RadioGroup
-                        row
-                        value={theme}
-                        onChange={e => setTheme(e.target.value as ThemeMode)}
-                        name="theme-mode"
-                    >
-                        <FormControlLabel value="light" control={<Radio />} label="Light" />
-                        <FormControlLabel value="dark" control={<Radio />} label="Dark" />
-                        <FormControlLabel value="system" control={<Radio />} label="System" />
-                    </RadioGroup>
-                </FormControl>
-
-                <Box sx={{ mt: 3 }}>
-                    <Button variant="contained" color="primary">
-                        Export Data (JSON)
-                    </Button>
-                </Box>
-            </Paper>
-
-            <Paper sx={{ p: 3, maxWidth: 600 }}>
-                <Typography variant="h6" gutterBottom>
-                    Database Management
-                </Typography>
-
-                <Box sx={{ mb: 2 }}>
-                    <Button
-                        variant="outlined"
-                        onClick={handleGetStats}
-                        sx={{ mr: 2 }}
-                    >
-                        Get Database Stats
-                    </Button>
-
-                    <Button
-                        variant="outlined"
-                        onClick={handleTestParsing}
-                        sx={{ mr: 2 }}
-                    >
-                        Test Parsing
-                    </Button>
-
-                    <Button
-                        variant="outlined"
-                        onClick={handleDecodeExistingEmails}
-                        disabled={isDecoding}
-                        sx={{ mr: 2 }}
-                    >
-                        {isDecoding ? 'Decoding...' : 'Decode Existing Emails'}
-                    </Button>
-
-                    <Button
-                        variant="outlined"
-                        onClick={handleTestNewEmailFetch}
-                        sx={{ mr: 2 }}
-                    >
-                        Test New Email Fetch
-                    </Button>
-
-                    {dbStats && (
+                        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                            Sync Settings
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            label="Batch Size"
+                            type="number"
+                            margin="normal"
+                            value={batchSize}
+                            onChange={e => setBatchSize(Number(e.target.value))}
+                            inputProps={{ min: 1, max: 100 }}
+                        />
+                        <TextField
+                            fullWidth
+                            label="Date Range (days)"
+                            type="number"
+                            margin="normal"
+                            value={dateRange}
+                            onChange={e => setDateRange(Number(e.target.value))}
+                            inputProps={{ min: 1, max: 365 }}
+                        />
+                        <FormControlLabel
+                            control={<Switch checked={showProgressBar} onChange={e => setShowProgressBar(e.target.checked)} />}
+                            label="Show progress bar during email loading"
+                        />
                         <Box sx={{ mt: 2 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Tokens: {dbStats.tokens} |
-                                Raw Emails: {dbStats.rawEmails}
-                            </Typography>
+                            <Button variant="contained" color="primary" onClick={handleReloadWithSettings}>
+                                Reload Emails with New Settings
+                            </Button>
                         </Box>
-                    )}
+                        {/* Remove visual progress bar and loading count from here */}
+
+                        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                            Preferences
+                        </Typography>
+                        <FormControlLabel
+                            control={<Switch defaultChecked />}
+                            label="Auto-sync on startup"
+                        />
+                        <FormControlLabel
+                            control={<Switch />}
+                            label="Show progress bar"
+                        />
+
+                        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
+                            Appearance
+                        </Typography>
+                        <FormControl component="fieldset" sx={{ mb: 2 }}>
+                            <FormLabel component="legend">Theme</FormLabel>
+                            <RadioGroup
+                                row
+                                value={theme}
+                                onChange={e => setTheme(e.target.value as ThemeMode)}
+                                name="theme-mode"
+                            >
+                                <FormControlLabel value="light" control={<Radio />} label="Light" />
+                                <FormControlLabel value="dark" control={<Radio />} label="Dark" />
+                                <FormControlLabel value="system" control={<Radio />} label="System" />
+                            </RadioGroup>
+                        </FormControl>
+
+                        <Box sx={{ mt: 3 }}>
+                            <Button variant="contained" color="primary">
+                                Export Data (JSON)
+                            </Button>
+                        </Box>
+                    </Box>
                 </Box>
 
-                <Divider sx={{ my: 2 }} />
+                <Box sx={{ width: '100%', maxWidth: 800 }}>
+                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Database Management
+                        </Typography>
 
-                <Typography variant="subtitle1" gutterBottom color="error">
-                    Danger Zone
-                </Typography>
+                        <Box sx={{ mb: 2 }}>
+                            <Button
+                                variant="outlined"
+                                onClick={handleGetStats}
+                                sx={{ mr: 2 }}
+                            >
+                                Get Database Stats
+                            </Button>
 
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    This will permanently delete all stored emails, subscriptions, and orders from your device.
-                </Typography>
+                            <Button
+                                variant="outlined"
+                                onClick={handleTestParsing}
+                                sx={{ mr: 2 }}
+                            >
+                                Test Parsing
+                            </Button>
 
-                <Button
-                    variant="contained"
-                    color="error"
-                    onClick={handlePurgeDatabase}
-                    disabled={isPurging}
-                >
-                    {isPurging ? 'Purging...' : 'Purge All Data'}
-                </Button>
+                            <Button
+                                variant="outlined"
+                                onClick={handleDecodeExistingEmails}
+                                disabled={isDecoding}
+                                sx={{ mr: 2 }}
+                            >
+                                {isDecoding ? 'Decoding...' : 'Decode Existing Emails'}
+                            </Button>
 
-                {purgeMessage && (
-                    <Alert
-                        severity={purgeMessage.includes('Error') ? 'error' : 'success'}
-                        sx={{ mt: 2 }}
-                    >
-                        {purgeMessage}
-                    </Alert>
-                )}
+                            <Button
+                                variant="outlined"
+                                onClick={handleTestNewEmailFetch}
+                                sx={{ mr: 2 }}
+                            >
+                                Test New Email Fetch
+                            </Button>
 
-                {decodeMessage && (
-                    <Alert
-                        severity={decodeMessage.includes('Error') ? 'error' : 'success'}
-                        sx={{ mt: 2 }}
-                    >
-                        {decodeMessage}
-                    </Alert>
-                )}
-            </Paper>
+                            {dbStats && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Tokens: {dbStats.tokens} |
+                                        Raw Emails: {dbStats.rawEmails}
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Box>
+
+                        <Divider sx={{ my: 2 }} />
+
+                        <Typography variant="subtitle1" gutterBottom color="error">
+                            Danger Zone
+                        </Typography>
+
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            This will permanently delete all stored emails, subscriptions, and orders from your device.
+                        </Typography>
+
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={handlePurgeDatabase}
+                            disabled={isPurging}
+                        >
+                            {isPurging ? 'Purging...' : 'Purge All Data'}
+                        </Button>
+
+                        {purgeMessage && (
+                            <Alert
+                                severity={purgeMessage.includes('Error') ? 'error' : 'success'}
+                                sx={{ mt: 2 }}
+                            >
+                                {purgeMessage}
+                            </Alert>
+                        )}
+
+                        {decodeMessage && (
+                            <Alert
+                                severity={decodeMessage.includes('Error') ? 'error' : 'success'}
+                                sx={{ mt: 2 }}
+                            >
+                                {decodeMessage}
+                            </Alert>
+                        )}
+                    </Box>
+                </Box>
+            </Box>
         </Box>
     );
 };
