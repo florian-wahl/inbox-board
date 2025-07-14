@@ -9,6 +9,7 @@ import { insertParsedOrder, insertParsedSubscription, insertParsedUnsubscribe } 
 import { orderToDB, orderFromDB } from '../types/order';
 import { subscriptionToDB, subscriptionFromDB } from '../types/subscription';
 import { unsubscribeSenderToDB, unsubscribeSenderFromDB } from '../services/ParserService';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 interface Email {
     id: string;
@@ -64,15 +65,26 @@ interface InboxDataProviderProps {
 
 export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }) => {
     const [rawEmails, setRawEmails] = useState<Email[]>([]);
-    // Remove state for orders, subscriptions, unsubscribes
-    // const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+    // Remove manual state and effect for orders, subscriptions, unsubscribes
     // const [orders, setOrders] = useState<Order[]>([]);
+    // const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     // const [unsubscribes, setUnsubscribes] = useState<UnsubscribeSender[]>([]);
 
-    // Load orders, subscriptions, and unsubscribes from DB
-    const [orders, setOrders] = useState<Order[]>([]);
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-    const [unsubscribes, setUnsubscribes] = useState<UnsubscribeSender[]>([]);
+    const orders = useLiveQuery(
+        () => db.parsedOrders.toArray().then(records => records.map(orderFromDB)),
+        [],
+        []
+    );
+    const subscriptions = useLiveQuery(
+        () => db.parsedSubscriptions.toArray().then(records => records.map(subscriptionFromDB)),
+        [],
+        []
+    );
+    const unsubscribes = useLiveQuery(
+        () => db.parsedUnsubscribes.toArray().then(records => records.map(unsubscribeSenderFromDB)),
+        [],
+        []
+    );
 
     const [lastEmailCount, setLastEmailCount] = useState<number>(0);
     const [loadingProgress, setLoadingProgress] = useState<number>(0);
@@ -230,18 +242,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         loadData();
     }, [isAuthenticated, accessToken]);
 
-    // Load orders, subscriptions, and unsubscribes from DB
-    useEffect(() => {
-        const loadFromDB = async () => {
-            const orderRecords = await db.parsedOrders.toArray();
-            setOrders(orderRecords.map(orderFromDB));
-            const subscriptionRecords = await db.parsedSubscriptions.toArray();
-            setSubscriptions(subscriptionRecords.map(subscriptionFromDB));
-            const unsubscribeRecords = await db.parsedUnsubscribes.toArray();
-            setUnsubscribes(unsubscribeRecords.map(unsubscribeSenderFromDB));
-        };
-        loadFromDB();
-    }, [rawEmails.length, lastEmailCount]);
+    // Remove useEffect for db.on('changes') and related manual reload logic
 
     // Configurable fetch window and batch size (can be moved to settings/context later)
     const DEFAULT_DAYS = 30;

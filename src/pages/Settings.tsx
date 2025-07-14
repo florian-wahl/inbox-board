@@ -15,8 +15,8 @@ const Settings: React.FC = () => {
     const { theme, setTheme } = useUI();
 
     // New state for batch size, date range, and progress bar
-    const [batchSize, setBatchSize] = useState<number>(20);
-    const [dateRange, setDateRange] = useState<number>(30);
+    const [batchSize, setBatchSize] = useState<number>(30);
+    const [dateRange, setDateRange] = useState<number>(15);
     const [showProgressBar, setShowProgressBar] = useState<boolean>(true);
 
     React.useEffect(() => {
