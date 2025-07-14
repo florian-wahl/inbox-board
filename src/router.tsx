@@ -5,21 +5,30 @@ import AppShell from './components/AppShell/AppShell';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
+import LoadingSpinner from './components/common/LoadingSpinner';
 
 const ProtectedLayout: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
-  /* TODO: Uncomment this when we have a proper auth flow
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <LoadingSpinner message="Checking authentication..." />;
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/onboarding" replace />;
   }
-  */
 
   return <AppShell />;
 };
 
 const AppRouter: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <LoadingSpinner message="Loading..." />;
+  }
 
   return (
     <BrowserRouter>

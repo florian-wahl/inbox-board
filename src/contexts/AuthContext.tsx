@@ -12,6 +12,7 @@ const GOOGLE_SCOPES = [
 interface AuthContextType {
     accessToken: string | null;
     isAuthenticated: boolean;
+    isLoading: boolean;
     login: () => Promise<void>;
     logout: () => void;
     refreshToken: () => Promise<void>;
@@ -39,21 +40,69 @@ declare global {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); // New loading state
 
     // Load tokens from database on app initialization
     useEffect(() => {
         const loadTokens = async () => {
             try {
-                const tokenRecord = await db.tokens.orderBy('updatedAt').reverse().first();
+                console.log('Loading tokens from database...');
+
+                // Test database connection
+                const allTokens = await db.tokens.toArray();
+                console.log('All tokens in database:', allTokens);
+
+                // Try to get the most recent token record
+                let tokenRecord;
+                try {
+                    tokenRecord = await db.tokens.orderBy('updatedAt').reverse().first();
+                } catch (error) {
+                    console.log('Could not order by updatedAt, trying to get first record:', error);
+                    // Fallback: get the first token record if ordering fails
+                    const allTokens = await db.tokens.toArray();
+                    tokenRecord = allTokens[0];
+                }
+                console.log('Token record found:', tokenRecord);
+
                 if (tokenRecord && tokenRecord.refreshToken && tokenRecord.accessToken) {
-                    setAccessToken(tokenRecord.accessToken);
-                    setIsAuthenticated(true);
+                    // Check if token has expired
+                    const now = Date.now();
+                    const isExpired = tokenRecord.expiresAt && now > tokenRecord.expiresAt;
+
+                    console.log('Token expiration check:', {
+                        now,
+                        expiresAt: tokenRecord.expiresAt,
+                        isExpired
+                    });
+
+                    if (!isExpired) {
+                        // Test token validity by making a simple API call
+                        try {
+                            gmailService.setAccessToken(tokenRecord.accessToken);
+                            await gmailService.getProfile();
+                            console.log('Token is valid, user authenticated');
+                            setAccessToken(tokenRecord.accessToken);
+                            setIsAuthenticated(true);
+                        } catch (error) {
+                            console.log('Token is invalid, clearing from database:', error);
+                            await db.tokens.clear();
+                            setAccessToken(null);
+                            setIsAuthenticated(false);
+                        }
+                    } else {
+                        console.log('Token has expired, clearing from database');
+                        await db.tokens.clear();
+                        setAccessToken(null);
+                        setIsAuthenticated(false);
+                    }
+                } else {
+                    console.log('No valid token record found');
                 }
             } catch (error) {
                 console.error('Error loading tokens from database:', error);
+            } finally {
+                setIsLoading(false); // Set loading to false after token loading
             }
-
-
         };
 
         loadTokens();
@@ -126,13 +175,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         const refreshToken = access_token; // Temporary until we implement refresh token flow
 
                         // Save tokens to database
-                        await db.tokens.add({
+                        const tokenRecord = {
                             accessToken: access_token,
                             refreshToken: refreshToken,
                             expiresAt: expiresAt,
                             createdAt: now,
                             updatedAt: now,
-                        });
+                        };
+
+                        console.log('Saving token to database:', tokenRecord);
+                        await db.tokens.add(tokenRecord);
+                        console.log('Token saved successfully');
 
                         setAccessToken(access_token);
                         setIsAuthenticated(true);
@@ -182,6 +235,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const value: AuthContextType = {
         accessToken,
         isAuthenticated,
+        isLoading, // Include loading state
         login,
         logout,
         refreshToken,

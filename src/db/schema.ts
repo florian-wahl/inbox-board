@@ -40,8 +40,8 @@ export class InboxBoardDB extends Dexie {
     constructor() {
         super('InboxBoardDB');
 
-        this.version(1).stores({
-            tokens: '++id, accessToken, refreshToken, expiresAt',
+        this.version(2).stores({
+            tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
             rawEmails: '++id, gmailId, threadId, from, date',
             parsedItems: '++id, type, emailId, createdAt',
         });
