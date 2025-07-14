@@ -26,6 +26,7 @@ export type UnsubscribeSender = {
     to?: string;
     date: string;
     labelIds?: string[];
+    listUnsubscribe?: string; // Added field for List-Unsubscribe header
 };
 
 export class ParserService {
@@ -348,6 +349,10 @@ export class ParserService {
             if (isUnsubscribeEmail(body, headers)) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
+                // Find List-Unsubscribe header value
+                const listUnsubscribeHeader = headers?.find(
+                    (h: any) => h.name?.toLowerCase() === 'list-unsubscribe'
+                );
                 // Only keep the most recent email for each domain (by date)
                 if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
                     unsubMap.set(domain, {
@@ -357,6 +362,7 @@ export class ParserService {
                         to,
                         date,
                         labelIds,
+                        listUnsubscribe: listUnsubscribeHeader?.value, // Store header value
                     });
                 }
             }
@@ -382,6 +388,10 @@ export class ParserService {
             if (isUnsubscribeEmail(body, headers)) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
+                // Find List-Unsubscribe header value
+                const listUnsubscribeHeader = headers?.find(
+                    (h: any) => h.name?.toLowerCase() === 'list-unsubscribe'
+                );
                 // Only keep the most recent email for each domain (by date)
                 if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
                     unsubMap.set(domain, {
@@ -391,6 +401,7 @@ export class ParserService {
                         to,
                         date,
                         labelIds,
+                        listUnsubscribe: listUnsubscribeHeader?.value, // Store header value
                     });
                 }
             }

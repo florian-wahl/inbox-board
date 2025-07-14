@@ -151,6 +151,11 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                                     <Typography component="span" fontWeight="bold">Labels:</Typography> {sender.labelIds.join(', ')}
                                 </Typography>
                             )}
+                            {sender.listUnsubscribe && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">List-Unsubscribe:</Typography> {sender.listUnsubscribe}
+                                </Typography>
+                            )}
                         </Box>
                     </Collapse>
                 </TableCell>
