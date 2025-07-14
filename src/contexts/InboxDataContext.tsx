@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { db } from '../db';
+import { gmailService } from '../services/GmailService';
+import { parserService } from '../services/ParserService';
 
 interface Email {
     id: string;
@@ -67,8 +69,46 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     }, []);
 
     const reload = async (): Promise<void> => {
-        // TODO: Implement data reload logic
-        console.log('Reload functionality to be implemented');
+        try {
+            // Fetch raw emails from Gmail service
+            const recentMessages = await gmailService.getRecentMessages(30);
+            setRawEmails(recentMessages.map(msg => ({
+                id: msg.id,
+                subject: msg.payload?.headers?.find(h => h.name === 'Subject')?.value || '',
+                from: msg.payload?.headers?.find(h => h.name === 'From')?.value || '',
+                date: msg.payload?.headers?.find(h => h.name === 'Date')?.value || '',
+                body: msg.snippet || '',
+            })));
+
+            // Parse subscriptions and orders using service stubs
+            const subscriptions = parserService.parseSubscriptions(recentMessages);
+            const orders = parserService.parseOrders(recentMessages);
+
+            setSubscriptions(subscriptions);
+            setOrders(orders);
+
+            // Store parsed items in database
+            const now = Date.now();
+            await db.parsedItems.bulkPut([
+                ...subscriptions.map(sub => ({
+                    type: 'subscription' as const,
+                    emailId: sub.id,
+                    data: sub,
+                    createdAt: now,
+                    updatedAt: now
+                })),
+                ...orders.map(order => ({
+                    type: 'order' as const,
+                    emailId: order.id,
+                    data: order,
+                    createdAt: now,
+                    updatedAt: now
+                })),
+            ]);
+
+        } catch (error) {
+            console.error('Failed to reload inbox data:', error);
+        }
     };
 
     const extendHistory = async (): Promise<void> => {
