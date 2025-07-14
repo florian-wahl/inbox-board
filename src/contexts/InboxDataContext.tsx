@@ -35,6 +35,7 @@ interface InboxDataContextType {
     reload: () => Promise<void>;
     extendHistory: () => Promise<void>;
     testParsing: () => Promise<void>; // Add test function to context
+    triggerParsing: () => Promise<void>; // Add method to manually trigger parsing
 }
 
 const InboxDataContext = createContext<InboxDataContextType | undefined>(undefined);
@@ -48,6 +49,81 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [orders, setOrders] = useState<Order[]>([]);
     const [unsubscribes, setUnsubscribes] = useState<string[]>([]);
+    const [lastEmailCount, setLastEmailCount] = useState<number>(0);
+
+    // Function to parse all emails from database
+    const parseAllEmails = async () => {
+        try {
+            console.log('Parsing all emails from database...');
+
+            // Get all raw emails from database
+            const rawEmailRecords = await db.rawEmails.toArray();
+            console.log(`Found ${rawEmailRecords.length} raw emails in database`);
+
+            if (rawEmailRecords.length === 0) {
+                console.log('No raw emails found in database');
+                return;
+            }
+
+            // Convert to GmailMessage format
+            const gmailMessages = rawEmailRecords.map(record => ({
+                id: record.gmailId,
+                threadId: record.threadId,
+                labelIds: record.labelIds,
+                snippet: record.snippet,
+                historyId: '1',
+                internalDate: new Date(record.date).getTime().toString(),
+                payload: {
+                    partId: '',
+                    mimeType: 'text/plain',
+                    filename: '',
+                    headers: [
+                        { name: 'From', value: record.from },
+                        { name: 'Subject', value: record.subject },
+                        { name: 'Date', value: record.date }
+                    ],
+                    body: {
+                        size: record.snippet.length,
+                        data: btoa(unescape(encodeURIComponent(record.snippet)))
+                    }
+                },
+                sizeEstimate: record.snippet.length
+            }));
+
+            // Parse all types
+            const subscriptions = parserService.parseSubscriptions(gmailMessages);
+            const orders = parserService.parseOrders(gmailMessages);
+            const unsubscribes = parserService.parseUnsubscribes(gmailMessages);
+
+            console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
+
+            // Update state
+            setSubscriptions(subscriptions);
+            setOrders(orders);
+            setUnsubscribes(unsubscribes);
+            setLastEmailCount(rawEmailRecords.length);
+
+        } catch (error) {
+            console.error('Error parsing emails:', error);
+        }
+    };
+
+    // Polling mechanism to check for new emails
+    useEffect(() => {
+        const pollInterval = setInterval(async () => {
+            try {
+                const currentEmailCount = await db.rawEmails.count();
+                if (currentEmailCount !== lastEmailCount) {
+                    console.log(`Email count changed from ${lastEmailCount} to ${currentEmailCount}, re-parsing...`);
+                    await parseAllEmails();
+                }
+            } catch (error) {
+                console.error('Error polling for new emails:', error);
+            }
+        }, 5000); // Check every 5 seconds
+
+        return () => clearInterval(pollInterval);
+    }, [lastEmailCount]);
 
     // Load data from database on initialization
     useEffect(() => {
@@ -68,77 +144,10 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                 }));
 
                 setRawEmails(emails);
+                setLastEmailCount(rawEmailRecords.length);
 
-                // Convert raw email records to GmailMessage format for parsing
-                const gmailMessages = rawEmailRecords.map(record => ({
-                    id: record.gmailId,
-                    threadId: record.threadId,
-                    labelIds: record.labelIds,
-                    snippet: record.snippet,
-                    historyId: '1',
-                    internalDate: new Date(record.date).getTime().toString(),
-                    payload: {
-                        partId: '',
-                        mimeType: 'text/plain',
-                        filename: '',
-                        headers: [
-                            { name: 'From', value: record.from },
-                            { name: 'Subject', value: record.subject },
-                            { name: 'Date', value: record.date }
-                        ],
-                        body: {
-                            size: record.snippet.length,
-                            data: btoa(unescape(encodeURIComponent(record.snippet)))
-                        }
-                    },
-                    sizeEstimate: record.snippet.length
-                }));
-
-                // Parse the raw emails for subscriptions and orders
-                console.log('Parsing raw emails for subscriptions and orders...');
-                console.log('Raw email records:', rawEmailRecords);
-                console.log('Converted Gmail messages:', gmailMessages);
-
-                const subscriptions = parserService.parseSubscriptions(gmailMessages);
-                const orders = parserService.parseOrders(gmailMessages);
-                const unsubscribes = parserService.parseUnsubscribes(gmailMessages);
-
-                console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes from raw emails`);
-                console.log('Parsed subscriptions:', subscriptions);
-                console.log('Parsed orders:', orders);
-                console.log('Parsed unsubscribes:', unsubscribes);
-
-                setSubscriptions(subscriptions);
-                setOrders(orders);
-                setUnsubscribes(unsubscribes);
-
-                // Store parsed items in database
-                const now = Date.now();
-                const parsedItemsToStore = [
-                    ...subscriptions.map(sub => ({
-                        type: 'subscription' as const,
-                        emailId: sub.id,
-                        data: sub,
-                        createdAt: now,
-                        updatedAt: now
-                    })),
-                    ...orders.map(order => ({
-                        type: 'order' as const,
-                        emailId: order.id,
-                        data: order,
-                        createdAt: now,
-                        updatedAt: now
-                    })),
-                ];
-
-                console.log('Items to store in database:', parsedItemsToStore);
-
-                if (parsedItemsToStore.length > 0) {
-                    await db.parsedItems.bulkPut(parsedItemsToStore);
-                    console.log('Parsed items stored in database');
-                } else {
-                    console.log('No parsed items to store in database');
-                }
+                // Parse all emails
+                await parseAllEmails();
 
             } catch (error) {
                 console.error('Error loading data from database:', error);
@@ -184,34 +193,10 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                 });
             }
 
-            // Parse subscriptions and orders
-            const subscriptions = parserService.parseSubscriptions(recentMessages);
-            const orders = parserService.parseOrders(recentMessages);
-            const unsubscribes = parserService.parseUnsubscribes(recentMessages);
+            // Trigger parsing of all emails (including new ones)
+            await parseAllEmails();
 
-            setSubscriptions(subscriptions);
-            setOrders(orders);
-            setUnsubscribes(unsubscribes);
-
-            // Store parsed items in database
-            await db.parsedItems.bulkPut([
-                ...subscriptions.map(sub => ({
-                    type: 'subscription' as const,
-                    emailId: sub.id,
-                    data: sub,
-                    createdAt: now,
-                    updatedAt: now
-                })),
-                ...orders.map(order => ({
-                    type: 'order' as const,
-                    emailId: order.id,
-                    data: order,
-                    createdAt: now,
-                    updatedAt: now
-                })),
-            ]);
-
-            console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
+            console.log(`Reload completed - parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
 
         } catch (error) {
             console.error('Failed to reload inbox data:', error);
@@ -284,7 +269,8 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         unsubscribes,
         reload,
         extendHistory,
-        testParsing, // Add test function to context
+        testParsing,
+        triggerParsing: parseAllEmails, // Expose the parsing function
     };
 
     return (
