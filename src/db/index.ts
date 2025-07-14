@@ -7,6 +7,7 @@ import { db } from './schema';
 // Migration function to handle schema upgrades
 export const runMigrations = async () => {
     try {
+        // Migration step removed as per user request
         console.log('Database schema upgrade completed');
     } catch (error) {
         console.error('Error running migrations:', error);

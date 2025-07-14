@@ -6,7 +6,9 @@ export const purgeDatabase = async (): Promise<void> => {
         // Clear all tables
         await db.tokens.clear();
         await db.rawEmails.clear();
-
+        await db.parsedOrders.clear();
+        await db.parsedSubscriptions.clear();
+        await db.parsedUnsubscribes.clear();
     } catch (error) {
         console.error('Error purging database:', error);
         throw error;
@@ -125,9 +127,9 @@ export const insertParsedSubscription = async (subscription: ParsedSubscriptionR
 
 // Insert a parsed unsubscribe entry if gmailId does not already exist
 export const insertParsedUnsubscribe = async (unsubscribe: ParsedUnsubscribeRecord): Promise<boolean> => {
-    const existing = await db.parsedUnsubscribeList.get(unsubscribe.gmailId);
+    const existing = await db.parsedUnsubscribes.get(unsubscribe.gmailId);
     if (!existing) {
-        await db.parsedUnsubscribeList.put(unsubscribe);
+        await db.parsedUnsubscribes.put(unsubscribe);
         return true;
     }
     return false;

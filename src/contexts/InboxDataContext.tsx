@@ -237,7 +237,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             setOrders(orderRecords.map(orderFromDB));
             const subscriptionRecords = await db.parsedSubscriptions.toArray();
             setSubscriptions(subscriptionRecords.map(subscriptionFromDB));
-            const unsubscribeRecords = await db.parsedUnsubscribeList.toArray();
+            const unsubscribeRecords = await db.parsedUnsubscribes.toArray();
             setUnsubscribes(unsubscribeRecords.map(unsubscribeSenderFromDB));
         };
         loadFromDB();

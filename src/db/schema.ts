@@ -120,18 +120,18 @@ export class InboxBoardDB extends Dexie {
     userPreferences!: Table<UserPreferencesRecord>;
     parsedOrders!: Table<ParsedOrderRecord>;
     parsedSubscriptions!: Table<ParsedSubscriptionRecord>;
-    parsedUnsubscribeList!: Table<ParsedUnsubscribeRecord>;
+    parsedUnsubscribes!: Table<ParsedUnsubscribeRecord>;
 
     constructor() {
         super('InboxBoardDB');
 
-        this.version(5).stores({
+        this.version(6).stores({
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
             rawEmails: '++id, &gmailId, threadId, from, date, historyId',
             userPreferences: '++id',
             parsedOrders: '&gmailId, merchant, date',
             parsedSubscriptions: '&gmailId, merchant, nextBilling',
-            parsedUnsubscribeList: '&gmailId, domain, from',
+            parsedUnsubscribes: '&gmailId, domain, from',
         });
     }
 }
