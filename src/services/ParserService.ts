@@ -211,6 +211,14 @@ export class ParserService {
         // Cap score at 100
         return Math.min(score, 100);
     }
+
+    parseSubscriptions(messages: GmailMessage[]): Subscription[] {
+        return [];
+    }
+
+    parseOrders(messages: GmailMessage[]): Order[] {
+        return [];
+    }
 }
 
 export const parserService = new ParserService(); 
