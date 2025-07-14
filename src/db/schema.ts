@@ -80,7 +80,7 @@ export class InboxBoardDB extends Dexie {
 
         this.version(4).stores({
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
-            rawEmails: '++id, gmailId, threadId, from, date, historyId',
+            rawEmails: '++id, &gmailId, threadId, from, date, historyId', // gmailId is now unique
             parsedItems: '++id, type, emailId, createdAt',
             userPreferences: '++id',
         });

@@ -17,9 +17,6 @@ export function decodeGmailBodyData(data: string): string {
         return new TextDecoder('utf-8').decode(bytes);
     } catch (e) {
         // Only warn if the cleaned string is non-empty
-        if (cleaned.length > 0) {
-            console.warn('Failed to decode Gmail body data:', e, cleaned);
-        }
         return data;
     }
 }

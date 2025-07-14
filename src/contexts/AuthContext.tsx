@@ -130,6 +130,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Store raw emails in database
             const now = Date.now();
             for (const message of messages) {
+                // Check if this gmailId already exists in the DB
+                const exists = await db.rawEmails.where('gmailId').equals(message.id).count();
+                if (exists > 0) {
+                    // Skip if already exists
+                    continue;
+                }
                 // Extract full email content
                 const { fullBody, decodedBody, mimeType, parts } = gmailService.extractEmailContent(message.payload, message.snippet);
 

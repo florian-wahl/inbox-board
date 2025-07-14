@@ -260,27 +260,36 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             const now = Date.now();
             for (const message of messages) {
                 const { fullBody, decodedBody, mimeType, parts } = gmailService.extractEmailContent(message.payload, message.snippet);
-                await db.rawEmails.put({
-                    gmailId: message.id,
-                    threadId: message.threadId,
-                    subject: message.payload.headers.find((h: any) => h.name === 'Subject')?.value || '',
-                    from: message.payload.headers.find((h: any) => h.name === 'From')?.value || '',
-                    date: message.payload.headers.find((h: any) => h.name === 'Date')?.value || '',
-                    body: decodedBody || message.snippet,
-                    snippet: message.snippet,
-                    labelIds: message.labelIds,
-                    historyId: message.historyId,
-                    internalDate: message.internalDate,
-                    sizeEstimate: message.sizeEstimate,
-                    fullBody: fullBody,
-                    decodedBody: decodedBody,
-                    allHeaders: message.payload.headers,
-                    mimeType: mimeType,
-                    parts: parts,
-                    createdAt: now,
-                    updatedAt: now,
-                });
-                totalInserted++;
+                try {
+                    await db.rawEmails.add({
+                        gmailId: message.id,
+                        threadId: message.threadId,
+                        subject: message.payload.headers.find((h: any) => h.name === 'Subject')?.value || '',
+                        from: message.payload.headers.find((h: any) => h.name === 'From')?.value || '',
+                        date: message.payload.headers.find((h: any) => h.name === 'Date')?.value || '',
+                        body: decodedBody || message.snippet,
+                        snippet: message.snippet,
+                        labelIds: message.labelIds,
+                        historyId: message.historyId,
+                        internalDate: message.internalDate,
+                        sizeEstimate: message.sizeEstimate,
+                        fullBody: fullBody,
+                        decodedBody: decodedBody,
+                        allHeaders: message.payload.headers,
+                        mimeType: mimeType,
+                        parts: parts,
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+                    totalInserted++;
+                } catch (error: any) {
+                    if (error.name === 'ConstraintError') {
+                        // Duplicate gmailId, skip
+                        continue;
+                    } else {
+                        throw error;
+                    }
+                }
             }
             totalFetched += messageIds.length;
             if (showProgressBar) {
