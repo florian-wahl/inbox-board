@@ -345,14 +345,15 @@ export class ParserService {
             const headers = message.payload.headers;
             const labelIds = message.labelIds;
 
-            // Check if email contains unsubscribe links
-            if (isUnsubscribeEmail(body, headers)) {
+            // Find List-Unsubscribe header value
+            const listUnsubscribeHeader = headers?.find(
+                (h: any) => h.name?.toLowerCase() === 'list-unsubscribe' && h.value && h.value.trim() !== ''
+            );
+
+            // Only add if List-Unsubscribe header is present and non-empty
+            if (isUnsubscribeEmail(body, headers) && listUnsubscribeHeader) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
-                // Find List-Unsubscribe header value
-                const listUnsubscribeHeader = headers?.find(
-                    (h: any) => h.name?.toLowerCase() === 'list-unsubscribe'
-                );
                 // Only keep the most recent email for each domain (by date)
                 if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
                     unsubMap.set(domain, {
@@ -362,7 +363,7 @@ export class ParserService {
                         to,
                         date,
                         labelIds,
-                        listUnsubscribe: listUnsubscribeHeader?.value, // Store header value
+                        listUnsubscribe: listUnsubscribeHeader.value, // Store header value
                     });
                 }
             }
@@ -384,14 +385,15 @@ export class ParserService {
             const labelIds = record.labelIds || [];
             const headers = record.allHeaders || [];
 
-            // Check if email contains unsubscribe links
-            if (isUnsubscribeEmail(body, headers)) {
+            // Find List-Unsubscribe header value
+            const listUnsubscribeHeader = headers?.find(
+                (h: any) => h.name?.toLowerCase() === 'list-unsubscribe' && h.value && h.value.trim() !== ''
+            );
+
+            // Only add if List-Unsubscribe header is present and non-empty
+            if (isUnsubscribeEmail(body, headers) && listUnsubscribeHeader) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
-                // Find List-Unsubscribe header value
-                const listUnsubscribeHeader = headers?.find(
-                    (h: any) => h.name?.toLowerCase() === 'list-unsubscribe'
-                );
                 // Only keep the most recent email for each domain (by date)
                 if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
                     unsubMap.set(domain, {
@@ -401,7 +403,7 @@ export class ParserService {
                         to,
                         date,
                         labelIds,
-                        listUnsubscribe: listUnsubscribeHeader?.value, // Store header value
+                        listUnsubscribe: listUnsubscribeHeader.value, // Store header value
                     });
                 }
             }
