@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { db } from '../db';
 import { gmailService } from '../services/GmailService';
+import { getUserPreferences } from '../utils/dbUtils';
+import { useInboxData } from './InboxDataContext';
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
@@ -41,6 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true); // New loading state
+    const { reload } = useInboxData();
 
     // Load tokens from database on app initialization
     useEffect(() => {
@@ -112,6 +115,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     useEffect(() => {
         gmailService.setAccessToken(accessToken);
     }, [accessToken]);
+
+    // After successful authentication, fetch user preferences and trigger email reload
+    useEffect(() => {
+        if (isAuthenticated && accessToken) {
+            (async () => {
+                const prefs = await getUserPreferences();
+                await reload(
+                    prefs?.batchSize ?? 20,
+                    prefs?.dateRange ?? 30,
+                    prefs?.settings?.showProgressBar ?? true
+                );
+            })();
+        }
+    }, [isAuthenticated, accessToken, reload]);
 
     // Fetch initial emails after successful authentication
     const fetchInitialEmails = async (token: string) => {
@@ -207,9 +224,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         // Set token in GmailService immediately before fetching emails
                         gmailService.setAccessToken(access_token);
 
-                        // Fetch initial emails after successful authentication
-                        await fetchInitialEmails(access_token);
-
+                        // Fetch user preferences and trigger email reload after onboarding
+                        const prefs = await getUserPreferences();
+                        await reload(
+                            prefs?.batchSize ?? 20,
+                            prefs?.dateRange ?? 30,
+                            prefs?.settings?.showProgressBar ?? true
+                        );
                     } catch (error) {
                         console.error('Error saving tokens:', error);
                     }

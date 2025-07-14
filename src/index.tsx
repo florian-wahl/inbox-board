@@ -27,13 +27,13 @@ root.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
-        <InboxDataProvider>
+      <InboxDataProvider>
+        <AuthProvider>
           <UIProvider>
             <AppRouter />
           </UIProvider>
-        </InboxDataProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </InboxDataProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

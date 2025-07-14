@@ -7,6 +7,7 @@ import { useUI } from '../../contexts/UIContext';
 import { useInboxData } from '../../contexts/InboxDataContext';
 import BottomSheet from '../BottomSheet/BottomSheet';
 import ProgressBar from '../ProgressBar/ProgressBar';
+import { getUserPreferences } from '../../utils/dbUtils';
 
 const AppShell: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -14,6 +15,14 @@ const AppShell: React.FC = () => {
   const { loadingActive } = useInboxData();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const navigate = useNavigate();
+  const [showProgressBar, setShowProgressBar] = React.useState(true);
+
+  React.useEffect(() => {
+    (async () => {
+      const prefs = await getUserPreferences();
+      setShowProgressBar(prefs?.settings?.showProgressBar ?? true);
+    })();
+  }, []);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -59,8 +68,8 @@ const AppShell: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Global loading bar under AppBar */}
-      {loadingActive && <ProgressBar position="top" />}
+      {/* Global loading bar under AppBar, no text, no extra padding */}
+      {loadingActive && showProgressBar && <ProgressBar position="top" />}
 
       <Drawer
         anchor="left"
@@ -92,11 +101,6 @@ const AppShell: React.FC = () => {
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <Outlet />
       </Box>
-
-      {/* Remove old bottom progress bar logic */}
-      {/* {isProgressBarVisible && (
-        <ProgressBar value={progressValue} />
-      )} */}
 
       <BottomSheet
         open={isBottomSheetOpen}
