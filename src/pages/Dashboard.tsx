@@ -176,56 +176,54 @@ const Dashboard: React.FC = () => {
                 Dashboard
             </Typography>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                    <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                        <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                            <Typography variant="h6" gutterBottom>
-                                Subscriptions ({subscriptions.length})
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <Box sx={{ width: '100%', maxWidth: 600 }}>
+                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Subscriptions ({subscriptions.length})
+                        </Typography>
+                        {subscriptions.length > 0 ? (
+                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                <Table size="small" aria-label="collapsible table">
+                                    <TableBody>
+                                        {subscriptions.map((subscription) => (
+                                            <CollapsibleSubscriptionRow key={subscription.id} subscription={subscription} />
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                No subscriptions found
                             </Typography>
-                            {subscriptions.length > 0 ? (
-                                <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
-                                    <Table size="small" aria-label="collapsible table">
-                                        <TableBody>
-                                            {subscriptions.map((subscription) => (
-                                                <CollapsibleSubscriptionRow key={subscription.id} subscription={subscription} />
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">
-                                    No subscriptions found
-                                </Typography>
-                            )}
-                        </Box>
-                    </Box>
-
-                    <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                        <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                            <Typography variant="h6" gutterBottom>
-                                Recent Orders ({orders.length})
-                            </Typography>
-                            {orders.length > 0 ? (
-                                <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
-                                    <Table size="small" aria-label="collapsible table">
-                                        <TableBody>
-                                            {orders.map((order) => (
-                                                <CollapsibleOrderRow key={order.id} order={order} />
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">
-                                    No orders found
-                                </Typography>
-                            )}
-                        </Box>
+                        )}
                     </Box>
                 </Box>
 
-                <Box>
+                <Box sx={{ width: '100%', maxWidth: 600 }}>
+                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Recent Orders ({orders.length})
+                        </Typography>
+                        {orders.length > 0 ? (
+                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                <Table size="small" aria-label="collapsible table">
+                                    <TableBody>
+                                        {orders.map((order) => (
+                                            <CollapsibleOrderRow key={order.id} order={order} />
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                No orders found
+                            </Typography>
+                        )}
+                    </Box>
+                </Box>
+
+                <Box sx={{ width: '100%', maxWidth: 600 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                         <Typography variant="h6" gutterBottom>
                             Unsubscribe List ({unsubscribes.length})
