@@ -3,14 +3,11 @@ import { UserPreferencesRecord } from '../db/schema';
 
 export const purgeDatabase = async (): Promise<void> => {
     try {
-        console.log('Purging database...');
-
         // Clear all tables
         await db.tokens.clear();
         await db.rawEmails.clear();
         await db.parsedItems.clear();
 
-        console.log('Database purged successfully');
     } catch (error) {
         console.error('Error purging database:', error);
         throw error;
@@ -40,8 +37,6 @@ export const getDatabaseStats = async (): Promise<{
 
 export const decodeExistingEmails = async (): Promise<{ updated: number; total: number }> => {
     try {
-        console.log('Decoding existing email content...');
-
         const rawEmailRecords = await db.rawEmails.toArray();
         let updatedCount = 0;
 
@@ -60,7 +55,6 @@ export const decodeExistingEmails = async (): Promise<{ updated: number; total: 
                         if (decoded !== data) {
                             updates.fullBody = decoded;
                             needsUpdate = true;
-                            console.log(`Decoded fullBody for email ${record.gmailId}`);
                         }
                     } catch (error) {
                         // Not base64 encoded, leave as is
@@ -76,7 +70,6 @@ export const decodeExistingEmails = async (): Promise<{ updated: number; total: 
                         if (decoded !== data) {
                             updates.decodedBody = decoded;
                             needsUpdate = true;
-                            console.log(`Decoded decodedBody for email ${record.gmailId}`);
                         }
                     } catch (error) {
                         // Not base64 encoded, leave as is
@@ -91,7 +84,6 @@ export const decodeExistingEmails = async (): Promise<{ updated: number; total: 
             }
         }
 
-        console.log(`Updated ${updatedCount} out of ${rawEmailRecords.length} records with decoded content`);
         return { updated: updatedCount, total: rawEmailRecords.length };
 
     } catch (error) {

@@ -48,20 +48,10 @@ export class GmailService {
 
     // Helper function to extract full email content
     public extractEmailContent(payload: any, snippet: string = ''): { fullBody: string; decodedBody: string; mimeType: string; parts?: any[] } {
-        console.log('Extracting email content from payload...');
-
         let rawData = extractGmailBody(payload) || snippet;
         let decoded = decodeGmailBodyData(rawData);
         let mimeType = payload.mimeType || 'text/plain';
         let parts = payload.parts;
-
-        console.log('Final extracted content:', {
-            decodedBodyLength: decoded.length,
-            fullBodyLength: decoded.length,
-            mimeType,
-            decodedBodySample: decoded.substring(0, 200) + '...',
-            fullBodySample: decoded.substring(0, 200) + '...',
-        });
 
         return { fullBody: decoded, decodedBody: decoded, mimeType, parts };
     }
@@ -114,19 +104,6 @@ export class GmailService {
         });
 
         const message = await this.makeRequest<GmailMessage>(`/messages/${messageId}?${params.toString()}`);
-
-        // Debug: Log the message structure
-        console.log('Gmail message structure:', {
-            id: message.id,
-            hasPayload: !!message.payload,
-            payloadMimeType: message.payload?.mimeType,
-            hasParts: !!message.payload?.parts,
-            partsCount: message.payload?.parts?.length || 0,
-            hasBody: !!message.payload?.body,
-            bodyDataLength: message.payload?.body?.data?.length || 0,
-            snippet: message.snippet?.substring(0, 100) + '...',
-            snippetLength: message.snippet?.length || 0
-        });
 
         return message;
     }

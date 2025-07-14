@@ -169,10 +169,6 @@ const Dashboard: React.FC = () => {
 
     // Trigger data loading when dashboard mounts
     useEffect(() => {
-        console.log('Dashboard mounted - checking for parsed data...');
-        console.log('Current subscriptions:', subscriptions.length);
-        console.log('Current orders:', orders.length);
-        console.log('Current unsubscribes:', unsubscribes.length);
     }, [subscriptions.length, orders.length, unsubscribes.length]);
 
     return (

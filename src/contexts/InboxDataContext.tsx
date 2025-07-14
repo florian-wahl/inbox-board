@@ -186,10 +186,8 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         if (!isAuthenticated || !accessToken) return;
         const loadData = async () => {
             try {
-                console.log('Loading data from database...');
                 // Load raw emails from database
                 const rawEmailRecords = await db.rawEmails.toArray();
-                console.log(`Loaded ${rawEmailRecords.length} raw emails from database`);
                 const emails: Email[] = rawEmailRecords.map(record => ({
                     id: record.gmailId,
                     subject: record.subject,

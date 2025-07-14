@@ -92,9 +92,6 @@ const Settings: React.FC = () => {
 
     const handleTestNewEmailFetch = async () => {
         try {
-            console.log('=== TESTING NEW EMAIL FETCH ===');
-
-            // Get a single recent message to test
             const { gmailService } = await import('../services/GmailService');
             const messages = await gmailService.getRecentMessages(1);
 

@@ -7,7 +7,6 @@ import { db } from './schema';
 // Migration function to handle schema upgrades
 export const runMigrations = async () => {
     try {
-        console.log('Running database migrations...');
         console.log('Database schema upgrade completed');
     } catch (error) {
         console.error('Error running migrations:', error);
@@ -18,7 +17,6 @@ export const runMigrations = async () => {
 export const initializeDatabase = async () => {
     try {
         await runMigrations();
-        console.log('Database initialization completed');
     } catch (error) {
         console.error('Error initializing database:', error);
     }
