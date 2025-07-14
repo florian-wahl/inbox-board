@@ -12,6 +12,7 @@ export const DATE_PATTERNS = {
     US: /\d{1,2}\/\d{1,2}\/\d{4}/g,
     EUROPEAN: /\d{1,2}\/\d{1,2}\/\d{4}/g,
     RELATIVE: /(today|tomorrow|yesterday|next week|next month)/gi,
+    MONTH_DD_YYYY: /([A-Z][a-z]+ \d{1,2}, \d{4})/g,
 };
 
 // Merchant patterns
@@ -43,9 +44,13 @@ export const extractCurrency = (text: string): { amount: number; currency: strin
 };
 
 export const extractDate = (text: string): Date | null => {
-    for (const pattern of Object.values(DATE_PATTERNS)) {
+    for (const [key, pattern] of Object.entries(DATE_PATTERNS)) {
         const match = text.match(pattern);
         if (match) {
+            if (key === 'MONTH_DD_YYYY') {
+                // Parse 'Month DD, YYYY' format
+                return new Date(match[0]);
+            }
             return new Date(match[0]);
         }
     }
