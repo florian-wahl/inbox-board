@@ -18,9 +18,24 @@ const Dashboard: React.FC = () => {
                             <Typography variant="h6" gutterBottom>
                                 Subscriptions ({subscriptions.length})
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Subscription cards will be displayed here
-                            </Typography>
+                            {subscriptions.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    {subscriptions.map((subscription) => (
+                                        <Box key={subscription.id} sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                            <Typography variant="body2" fontWeight="medium">
+                                                {subscription.merchant}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {subscription.plan} - ${subscription.amount}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    No subscriptions found
+                                </Typography>
+                            )}
                         </Box>
                     </Box>
 
@@ -29,9 +44,24 @@ const Dashboard: React.FC = () => {
                             <Typography variant="h6" gutterBottom>
                                 Recent Orders ({orders.length})
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                Order cards will be displayed here
-                            </Typography>
+                            {orders.length > 0 ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                    {orders.map((order) => (
+                                        <Box key={order.id} sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                                            <Typography variant="body2" fontWeight="medium">
+                                                {order.merchant}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                ${order.amount} - {new Date(order.date).toLocaleDateString()}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    No orders found
+                                </Typography>
+                            )}
                         </Box>
                     </Box>
                 </Box>

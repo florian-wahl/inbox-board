@@ -8,11 +8,13 @@ import Onboarding from './pages/Onboarding';
 
 const ProtectedLayout: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  
+
+  /* TODO: Uncomment this when we have a proper auth flow
   if (!isAuthenticated) {
     return <Navigate to="/onboarding" replace />;
   }
-  
+  */
+
   return <AppShell />;
 };
 
@@ -23,33 +25,33 @@ const AppRouter: React.FC = () => {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route 
-          path="/onboarding" 
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Onboarding />} 
+        <Route
+          path="/onboarding"
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Onboarding />}
         />
-        
+
         {/* Protected routes with AppShell layout */}
         <Route path="/" element={<ProtectedLayout />}>
-          <Route 
-            path="/dashboard" 
-            element={<Dashboard />} 
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
           />
-          <Route 
-            path="/settings" 
-            element={<Settings />} 
+          <Route
+            path="/settings"
+            element={<Settings />}
           />
-          
+
           {/* Default redirect for authenticated users */}
-          <Route 
-            path="/" 
-            element={<Navigate to="/dashboard" replace />} 
+          <Route
+            path="/"
+            element={<Navigate to="/dashboard" replace />}
           />
         </Route>
-        
+
         {/* Catch all - redirect to dashboard or onboarding */}
-        <Route 
-          path="*" 
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/onboarding"} replace />} 
+        <Route
+          path="*"
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/onboarding"} replace />}
         />
       </Routes>
     </BrowserRouter>
