@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel, Alert, Divider } from '@mui/material';
-import { purgeDatabase, getDatabaseStats, decodeExistingEmails } from '../utils/dbUtils';
+import { purgeDatabase, getDatabaseStats, decodeExistingEmails, getUserPreferences, setUserPreferences } from '../utils/dbUtils';
 import { useInboxData } from '../contexts/InboxDataContext';
 import LinearProgress from '@mui/material/LinearProgress';
 
@@ -16,6 +16,22 @@ const Settings: React.FC = () => {
     const [batchSize, setBatchSize] = useState<number>(20);
     const [dateRange, setDateRange] = useState<number>(30);
     const [showProgressBar, setShowProgressBar] = useState<boolean>(true);
+
+    React.useEffect(() => {
+        (async () => {
+            const prefs = await getUserPreferences();
+            if (prefs) {
+                setBatchSize(prefs.batchSize ?? 20);
+                setDateRange(prefs.dateRange ?? 30);
+                setShowProgressBar(prefs.settings?.showProgressBar ?? true);
+            }
+        })();
+    }, []);
+
+    // Save preferences to DB when changed
+    React.useEffect(() => {
+        setUserPreferences({ batchSize, dateRange, settings: { showProgressBar } });
+    }, [batchSize, dateRange, showProgressBar]);
 
     const handlePurgeDatabase = async () => {
         if (window.confirm('Are you sure you want to purge all data? This will remove all emails, subscriptions, and orders. This action cannot be undone.')) {
@@ -159,18 +175,7 @@ const Settings: React.FC = () => {
                         Reload Emails with New Settings
                     </Button>
                 </Box>
-                {/* Visual progress bar */}
-                {showProgressBar && loadingActive && (
-                    <Box sx={{ mt: 2 }}>
-                        <LinearProgress
-                            variant={loadingTotal ? 'determinate' : 'indeterminate'}
-                            value={loadingTotal ? Math.min(100, ((loadingProgress || 0) / loadingTotal) * 100) : undefined}
-                        />
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                            Loading emails... {loadingProgress || 0} / {loadingTotal || '?'}
-                        </Typography>
-                    </Box>
-                )}
+                {/* Remove visual progress bar and loading count from here */}
 
                 <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                     Preferences

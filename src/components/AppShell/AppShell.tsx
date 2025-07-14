@@ -4,12 +4,14 @@ import { Box, AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem, L
 import { Menu as MenuIcon, Dashboard as DashboardIcon, Settings as SettingsIcon, Login as LoginIcon } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useUI } from '../../contexts/UIContext';
+import { useInboxData } from '../../contexts/InboxDataContext';
 import BottomSheet from '../BottomSheet/BottomSheet';
 import ProgressBar from '../ProgressBar/ProgressBar';
 
 const AppShell: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
   const { isBottomSheetOpen, bottomSheetContent, closeBottomSheet, isProgressBarVisible, progressValue } = useUI();
+  const { loadingActive } = useInboxData();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const navigate = useNavigate();
 
@@ -57,6 +59,9 @@ const AppShell: React.FC = () => {
         </Toolbar>
       </AppBar>
 
+      {/* Global loading bar under AppBar */}
+      {loadingActive && <ProgressBar position="top" />}
+
       <Drawer
         anchor="left"
         open={drawerOpen}
@@ -88,9 +93,10 @@ const AppShell: React.FC = () => {
         <Outlet />
       </Box>
 
-      {isProgressBarVisible && (
+      {/* Remove old bottom progress bar logic */}
+      {/* {isProgressBarVisible && (
         <ProgressBar value={progressValue} />
-      )}
+      )} */}
 
       <BottomSheet
         open={isBottomSheetOpen}

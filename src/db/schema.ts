@@ -42,6 +42,13 @@ export interface ParsedItemRecord {
     updatedAt: number;
 }
 
+export interface UserPreferencesRecord {
+    id?: number;
+    batchSize: number;
+    dateRange: number;
+    settings?: Record<string, any>; // For future extensibility
+}
+
 export interface GmailHeader {
     name: string;
     value: string;
@@ -66,14 +73,16 @@ export class InboxBoardDB extends Dexie {
     tokens!: Table<TokenRecord>;
     rawEmails!: Table<RawEmailRecord>;
     parsedItems!: Table<ParsedItemRecord>;
+    userPreferences!: Table<UserPreferencesRecord>;
 
     constructor() {
         super('InboxBoardDB');
 
-        this.version(3).stores({
+        this.version(4).stores({
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
             rawEmails: '++id, gmailId, threadId, from, date, historyId',
             parsedItems: '++id, type, emailId, createdAt',
+            userPreferences: '++id',
         });
     }
 }

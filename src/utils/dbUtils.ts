@@ -1,4 +1,5 @@
 import { db } from '../db';
+import { UserPreferencesRecord } from '../db/schema';
 
 export const purgeDatabase = async (): Promise<void> => {
     try {
@@ -96,5 +97,19 @@ export const decodeExistingEmails = async (): Promise<{ updated: number; total: 
     } catch (error) {
         console.error('Error decoding existing emails:', error);
         throw error;
+    }
+};
+
+export const getUserPreferences = async (): Promise<UserPreferencesRecord | null> => {
+    const prefs = await db.userPreferences.get(1);
+    return prefs || null;
+};
+
+export const setUserPreferences = async (prefs: Partial<UserPreferencesRecord>): Promise<void> => {
+    const existing = await db.userPreferences.get(1);
+    if (existing) {
+        await db.userPreferences.update(1, { ...existing, ...prefs });
+    } else {
+        await db.userPreferences.put({ id: 1, batchSize: prefs.batchSize ?? 20, dateRange: prefs.dateRange ?? 30, ...prefs });
     }
 }; 
