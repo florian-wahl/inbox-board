@@ -1,7 +1,7 @@
 import { GmailMessage } from '../types/gmail';
 import { Subscription } from '../types/subscription';
 import { Order } from '../types/order';
-import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail } from '../utils/regex';
+import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail } from '../utils/regex';
 import { formatDate } from '../utils/date';
 
 export class ParserService {
@@ -258,6 +258,37 @@ export class ParserService {
         }
 
         return orders;
+    }
+
+    parseUnsubscribes(messages: GmailMessage[]): string[] {
+        const unsubscribes: string[] = [];
+        const seenSenders = new Set<string>();
+
+        for (const message of messages) {
+            const body = this.extractEmailBody(message);
+            const { from } = this.extractEmailHeaders(message);
+
+            // Check if email contains unsubscribe links
+            if (isUnsubscribeEmail(body)) {
+                // Extract sender domain from email address
+                const senderDomain = this.extractSenderDomain(from);
+                if (senderDomain && !seenSenders.has(senderDomain)) {
+                    seenSenders.add(senderDomain);
+                    unsubscribes.push(senderDomain);
+                }
+            }
+        }
+
+        return unsubscribes;
+    }
+
+    private extractSenderDomain(email: string): string {
+        const match = email.match(/@([^>]+)/);
+        if (match) {
+            const domain = match[1].split('.')[0]; // Get the main domain part
+            return domain.charAt(0).toUpperCase() + domain.slice(1);
+        }
+        return '';
     }
 }
 

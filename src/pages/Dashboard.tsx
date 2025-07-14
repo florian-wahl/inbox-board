@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { useInboxData } from '../contexts/InboxDataContext';
+import UnsubscribeList from '../components/UnsubscribeList/UnsubscribeList';
 
 const Dashboard: React.FC = () => {
     const { subscriptions, orders, unsubscribes, reload } = useInboxData();
@@ -10,7 +11,8 @@ const Dashboard: React.FC = () => {
         console.log('Dashboard mounted - checking for parsed data...');
         console.log('Current subscriptions:', subscriptions.length);
         console.log('Current orders:', orders.length);
-    }, [subscriptions.length, orders.length]);
+        console.log('Current unsubscribes:', unsubscribes.length);
+    }, [subscriptions.length, orders.length, unsubscribes.length]);
 
     return (
         <Box>
@@ -78,9 +80,13 @@ const Dashboard: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Unsubscribe List ({unsubscribes.length})
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            High-noise senders will be displayed here
-                        </Typography>
+                        {unsubscribes.length > 0 ? (
+                            <UnsubscribeList senders={unsubscribes} />
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                No high-noise senders found
+                            </Typography>
+                        )}
                     </Box>
                 </Box>
             </Box>

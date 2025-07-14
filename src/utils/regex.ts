@@ -22,6 +22,13 @@ export const MERCHANT_PATTERNS = {
     ORDER: /(order|purchase|receipt|confirmation|shipped|delivered)/gi,
 };
 
+// Unsubscribe patterns
+export const UNSUBSCRIBE_PATTERNS = {
+    LINKS: /(?:href|url)=["']?[^"'\s]*unsubscribe[^"'\s]*["']?/gi,
+    TEXT: /(?:unsubscribe|opt.?out|remove from list|stop receiving)/gi,
+    BUTTONS: /<[^>]*unsubscribe[^>]*>/gi,
+};
+
 // Email patterns
 export const EMAIL_PATTERNS = {
     SENDER: /From:\s*([^\n\r]+)/gi,
@@ -98,4 +105,17 @@ export const isOrderEmail = (text: string): boolean => {
 
     const lowerText = text.toLowerCase();
     return orderKeywords.some(keyword => lowerText.includes(keyword));
+};
+
+export const isUnsubscribeEmail = (text: string): boolean => {
+    const lowerText = text.toLowerCase();
+
+    // Check for unsubscribe patterns
+    for (const [type, pattern] of Object.entries(UNSUBSCRIBE_PATTERNS)) {
+        if (pattern.test(lowerText)) {
+            return true;
+        }
+    }
+
+    return false;
 }; 

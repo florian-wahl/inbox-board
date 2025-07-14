@@ -101,13 +101,16 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
 
                 const subscriptions = parserService.parseSubscriptions(gmailMessages);
                 const orders = parserService.parseOrders(gmailMessages);
+                const unsubscribes = parserService.parseUnsubscribes(gmailMessages);
 
-                console.log(`Parsed ${subscriptions.length} subscriptions and ${orders.length} orders from raw emails`);
+                console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes from raw emails`);
                 console.log('Parsed subscriptions:', subscriptions);
                 console.log('Parsed orders:', orders);
+                console.log('Parsed unsubscribes:', unsubscribes);
 
                 setSubscriptions(subscriptions);
                 setOrders(orders);
+                setUnsubscribes(unsubscribes);
 
                 // Store parsed items in database
                 const now = Date.now();
@@ -184,9 +187,11 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             // Parse subscriptions and orders
             const subscriptions = parserService.parseSubscriptions(recentMessages);
             const orders = parserService.parseOrders(recentMessages);
+            const unsubscribes = parserService.parseUnsubscribes(recentMessages);
 
             setSubscriptions(subscriptions);
             setOrders(orders);
+            setUnsubscribes(unsubscribes);
 
             // Store parsed items in database
             await db.parsedItems.bulkPut([
@@ -206,7 +211,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                 })),
             ]);
 
-            console.log(`Parsed ${subscriptions.length} subscriptions and ${orders.length} orders`);
+            console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
 
         } catch (error) {
             console.error('Failed to reload inbox data:', error);
