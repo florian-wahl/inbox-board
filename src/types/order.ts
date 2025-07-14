@@ -16,6 +16,7 @@ export interface Order {
     to?: string; // recipient's email address (optional)
     labelIds?: string[]; // Gmail label IDs
     headers?: { name: string; value: string }[]; // All email headers
+    orderMatchKeyword?: string | null; // NEW FIELD: keyword that flagged as order
 }
 
 export interface OrderItem {

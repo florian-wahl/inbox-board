@@ -110,6 +110,21 @@ export const isOrderEmail = (text: string): boolean => {
     return orderKeywords.some(keyword => lowerText.includes(keyword));
 };
 
+export const getOrderEmailKeyword = (text: string): string | null => {
+    const orderKeywords = [
+        'order',
+        'purchase',
+        'receipt',
+        'confirmation',
+        'shipped',
+        'delivered',
+        'tracking',
+        'invoice',
+    ];
+    const lowerText = text.toLowerCase();
+    return orderKeywords.find(keyword => lowerText.includes(keyword)) || null;
+};
+
 export const isUnsubscribeEmail = (text: string, headers?: any[]): boolean => {
     const lowerText = text.toLowerCase();
 

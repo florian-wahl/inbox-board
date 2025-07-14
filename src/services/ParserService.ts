@@ -1,7 +1,7 @@
 import { GmailMessage } from '../types/gmail';
 import { Subscription } from '../types/subscription';
 import { Order } from '../types/order';
-import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence } from '../utils/regex';
+import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence, getOrderEmailKeyword } from '../utils/regex';
 import { formatDate } from '../utils/date';
 import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
 
@@ -129,10 +129,12 @@ export class ParserService {
             const body = this.extractEmailBody(message);
             const { from, subject, date, to } = this.extractEmailHeaders(message);
 
-            if (!isOrderEmail(subject + ' ' + body)) {
+            const combinedText = subject + ' ' + body;
+            if (!isOrderEmail(combinedText)) {
                 return null;
             }
 
+            const orderMatchKeyword = getOrderEmailKeyword(combinedText);
             const currency = extractCurrency(body);
             const orderDate = new Date(date); // Always use email sent date
             // Merchant extraction: always use sender's domain
@@ -158,8 +160,7 @@ export class ParserService {
                 from, // sender's email address
                 subject, // email subject
                 to, // recipient's email address
-                labelIds: message.labelIds,
-                headers: message.payload.headers,
+                orderMatchKeyword, // NEW FIELD
             };
         } catch (error) {
             console.error('Error parsing order:', error);

@@ -45,6 +45,13 @@ function CollapsibleOrderRow({ order }: { order: any }) {
                                 </Typography>
                             )}
                         </Box>
+                        {order.orderMatchKeyword && (
+                            <Box margin={1}>
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Order Keyword:</Typography> {order.orderMatchKeyword}
+                                </Typography>
+                            </Box>
+                        )}
                     </Collapse>
                 </TableCell>
             </TableRow>
