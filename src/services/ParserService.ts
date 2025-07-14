@@ -91,16 +91,8 @@ export class ParserService {
 
             const currency = extractCurrency(body);
             const billingDate = extractDate(body);
-            // Improved merchant extraction logic
-            let merchant = null;
-            // Try COMMON pattern only
-            const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
-            const commonMatch = (subject + ' ' + body).match(commonPattern);
-            if (commonMatch) {
-                merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
-            } else {
-                merchant = this.extractMerchantFromEmail(from);
-            }
+            // Merchant extraction: always use sender's domain
+            const merchant = this.extractMerchantFromEmail(from);
 
             if (!currency || !billingDate || !merchant) {
                 return null;
@@ -136,16 +128,8 @@ export class ParserService {
 
             const currency = extractCurrency(body);
             const orderDate = new Date(date); // Always use email sent date
-            // Improved merchant extraction logic
-            let merchant = null;
-            // Try COMMON pattern only
-            const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple)/i;
-            const commonMatch = (subject + ' ' + body).match(commonPattern);
-            if (commonMatch) {
-                merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
-            } else {
-                merchant = this.extractMerchantFromEmail(from);
-            }
+            // Merchant extraction: always use sender's domain
+            const merchant = this.extractMerchantFromEmail(from);
 
             if (!currency || !merchant) {
                 return null;
@@ -178,7 +162,21 @@ export class ParserService {
         const domain = email.split('@')[1];
         if (!domain) return 'Unknown';
 
-        return domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+        // Remove subdomains, get the main domain before the first TLD
+        // e.g., mail.amazon.com -> amazon, shop.mail.amazon.co.uk -> amazon
+        const domainParts = domain.split('.');
+        if (domainParts.length < 2) return domain.charAt(0).toUpperCase() + domain.slice(1);
+        // Find the part before the TLD (last part before .com, .net, etc.)
+        // Handles multi-part TLDs like .co.uk
+        let mainDomain = '';
+        if (domainParts.length >= 3 && domainParts[domainParts.length - 2].length <= 3) {
+            // e.g., amazon.co.uk -> amazon
+            mainDomain = domainParts[domainParts.length - 3];
+        } else {
+            // e.g., merchant.com -> merchant
+            mainDomain = domainParts[domainParts.length - 2];
+        }
+        return mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1);
     }
 
     private extractPlanName(subject: string, body: string): string {
