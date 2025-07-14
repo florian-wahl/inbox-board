@@ -126,9 +126,11 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                 };
             });
 
+            // Filter out promotional emails for order parsing
+            const nonPromotionalMessages = gmailMessages.filter(msg => !msg.labelIds?.includes('CATEGORY_PROMOTIONS'));
             // Parse all types using the new methods
             const subscriptions = parserService.parseSubscriptions(gmailMessages);
-            const orders = parserService.parseOrders(gmailMessages);
+            const orders = parserService.parseOrders(nonPromotionalMessages);
             const unsubscribes = parserService.parseUnsubscribesFromRecords(rawEmailRecords);
 
             console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
@@ -307,9 +309,11 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
 
             console.log('Sample email content:', gmailMessages[0]);
 
+            // Filter out promotional emails for order parsing
+            const nonPromotionalMessages = gmailMessages.filter(msg => !msg.labelIds?.includes('CATEGORY_PROMOTIONS'));
             // Test parsing
             const subscriptions = parserService.parseSubscriptions(gmailMessages);
-            const orders = parserService.parseOrders(gmailMessages);
+            const orders = parserService.parseOrders(nonPromotionalMessages);
 
             console.log(`Parsing results: ${subscriptions.length} subscriptions, ${orders.length} orders`);
             console.log('Sample subscription:', subscriptions[0]);

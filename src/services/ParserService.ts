@@ -1,7 +1,7 @@
 import { GmailMessage } from '../types/gmail';
 import { Subscription } from '../types/subscription';
 import { Order } from '../types/order';
-import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail } from '../utils/regex';
+import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence } from '../utils/regex';
 import { formatDate } from '../utils/date';
 import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
 
@@ -83,9 +83,10 @@ export class ParserService {
     parseSubscription(message: GmailMessage): Subscription | null {
         try {
             const body = this.extractEmailBody(message);
-            const { from, subject, date } = this.extractEmailHeaders(message);
+            const { from, subject, date, to } = this.extractEmailHeaders(message);
 
-            if (!isSubscriptionEmail(subject + ' ' + body)) {
+            const combinedText = subject + ' ' + body;
+            if (!isSubscriptionEmail(combinedText) || !hasBillingRecurrence(combinedText)) {
                 return null;
             }
 
@@ -110,6 +111,12 @@ export class ParserService {
                 emailId: message.id,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                from,
+                subject,
+                to,
+                date: this.safeToISOString(new Date(date)),
+                labelIds: message.labelIds,
+                headers: message.payload.headers,
             };
         } catch (error) {
             console.error('Error parsing subscription:', error);
@@ -151,6 +158,8 @@ export class ParserService {
                 from, // sender's email address
                 subject, // email subject
                 to, // recipient's email address
+                labelIds: message.labelIds,
+                headers: message.payload.headers,
             };
         } catch (error) {
             console.error('Error parsing order:', error);

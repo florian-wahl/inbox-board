@@ -23,9 +23,99 @@ function CollapsibleOrderRow({ order }: { order: any }) {
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box margin={1}>
-                            <Typography variant="subtitle2">From: {order.from}</Typography>
-                            {order.subject && <Typography variant="subtitle2">Subject: {order.subject}</Typography>}
-                            {order.to && <Typography variant="subtitle2">To: {order.to}</Typography>}
+                            <Typography variant="subtitle2">
+                                <Typography component="span" fontWeight="bold">From:</Typography> {order.from}
+                            </Typography>
+                            {order.subject && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Subject:</Typography> {order.subject}
+                                </Typography>
+                            )}
+                            {order.to && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">To:</Typography> {order.to}
+                                </Typography>
+                            )}
+                            <Typography variant="subtitle2">
+                                <Typography component="span" fontWeight="bold">Sent:</Typography> {new Date(order.date).toLocaleString()}
+                            </Typography>
+                            {order.labelIds && order.labelIds.length > 0 && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Labels:</Typography> {order.labelIds.join(', ')}
+                                </Typography>
+                            )}
+                            {order.headers && order.headers.length > 0 && (
+                                <Box mt={1}>
+                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                        <Typography component="span" fontWeight="bold">Headers:</Typography>
+                                    </Typography>
+                                    {order.headers.map((header: any, idx: number) => (
+                                        <Typography key={idx} variant="body2" sx={{ ml: 2 }}>
+                                            <Typography component="span" fontWeight="bold">{header.name}:</Typography> {header.value}
+                                        </Typography>
+                                    ))}
+                                </Box>
+                            )}
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </>
+    );
+}
+
+function CollapsibleSubscriptionRow({ subscription }: { subscription: any }) {
+    const [open, setOpen] = React.useState(false);
+    return (
+        <>
+            <TableRow sx={{ '& > *': { borderBottom: 'unset' }, cursor: 'pointer' }} onClick={() => setOpen(!open)}>
+                <TableCell sx={{ width: 40, p: 0 }}>
+                    <IconButton aria-label="expand row" size="small">
+                        {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>{subscription.merchant}</TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>{subscription.amount ? `$${subscription.amount}` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box margin={1}>
+                            <Typography variant="subtitle2">
+                                <Typography component="span" fontWeight="bold">From:</Typography> {subscription.from}
+                            </Typography>
+                            {subscription.to && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">To:</Typography> {subscription.to}
+                                </Typography>
+                            )}
+                            {subscription.subject && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Subject:</Typography> {subscription.subject}
+                                </Typography>
+                            )}
+                            {subscription.date && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Sent:</Typography> {new Date(subscription.date).toLocaleString()}
+                                </Typography>
+                            )}
+                            {subscription.labelIds && subscription.labelIds.length > 0 && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Labels:</Typography> {subscription.labelIds.join(', ')}
+                                </Typography>
+                            )}
+                            {subscription.headers && subscription.headers.length > 0 && (
+                                <Box mt={1}>
+                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                        <Typography component="span" fontWeight="bold">Headers:</Typography>
+                                    </Typography>
+                                    {subscription.headers.map((header: any, idx: number) => (
+                                        <Typography key={idx} variant="body2" sx={{ ml: 2 }}>
+                                            <Typography component="span" fontWeight="bold">{header.name}:</Typography> {header.value}
+                                        </Typography>
+                                    ))}
+                                </Box>
+                            )}
                         </Box>
                     </Collapse>
                 </TableCell>
@@ -59,18 +149,15 @@ const Dashboard: React.FC = () => {
                                 Subscriptions ({subscriptions.length})
                             </Typography>
                             {subscriptions.length > 0 ? (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                    {subscriptions.map((subscription) => (
-                                        <Box key={subscription.id} sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                                            <Typography variant="body2" fontWeight="medium">
-                                                {subscription.merchant}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {subscription.plan} - ${subscription.amount}
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
+                                <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                    <Table size="small" aria-label="collapsible table">
+                                        <TableBody>
+                                            {subscriptions.map((subscription) => (
+                                                <CollapsibleSubscriptionRow key={subscription.id} subscription={subscription} />
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
                             ) : (
                                 <Typography variant="body2" color="text.secondary">
                                     No subscriptions found

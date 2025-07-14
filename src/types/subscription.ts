@@ -10,6 +10,12 @@ export interface Subscription {
     emailId: string;
     createdAt: string;
     updatedAt: string;
+    from: string; // sender's email address
+    subject: string; // email subject
+    to?: string; // recipient's email address (optional)
+    date: string; // sent date (ISO string)
+    labelIds?: string[]; // Gmail label IDs
+    headers?: { name: string; value: string }[]; // All email headers
 }
 
 export interface SubscriptionCard {

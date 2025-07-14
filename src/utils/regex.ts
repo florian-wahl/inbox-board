@@ -131,4 +131,20 @@ export const isUnsubscribeEmail = (text: string, headers?: any[]): boolean => {
     }
 
     return false;
+};
+
+export const hasBillingRecurrence = (text: string): boolean => {
+    const recurrencePatterns = [
+        /(every|each)\s+(month|year|week|quarter)/i,
+        /(renews|billed|charged)\s+(monthly|yearly|annually|weekly|quarterly)/i,
+        /(next\s+(billing|charge|payment|invoice)\s+date)/i,
+        /(auto-?renew)/i,
+        /(recurring\s+payment)/i,
+        /(your\s+plan\s+will\s+renew)/i,
+        /(subscription\s+renews)/i,
+        /(renewal\s+date)/i,
+        /(next\s+payment)/i,
+        /\$\d+(\.\d+)?\s+every\s+(month|year|week|quarter)/i,
+    ];
+    return recurrencePatterns.some(pattern => pattern.test(text));
 }; 

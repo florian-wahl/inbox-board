@@ -11,9 +11,11 @@ export interface Order {
     items: OrderItem[];
     createdAt: string;
     updatedAt: string;
-    from: string; // NEW FIELD: sender's email address
-    subject: string; // NEW FIELD: email subject
-    to?: string; // NEW FIELD: recipient's email address (optional)
+    from: string; // sender's email address
+    subject: string; // email subject
+    to?: string; // recipient's email address (optional)
+    labelIds?: string[]; // Gmail label IDs
+    headers?: { name: string; value: string }[]; // All email headers
 }
 
 export interface OrderItem {
