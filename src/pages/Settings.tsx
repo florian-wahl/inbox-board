@@ -135,16 +135,6 @@ const Settings: React.FC = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Gmail Account
-                        </Typography>
-                        <TextField
-                            fullWidth
-                            label="Gmail Account"
-                            margin="normal"
-                            disabled
-                            value="user@gmail.com"
-                        />
 
                         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                             Sync Settings
