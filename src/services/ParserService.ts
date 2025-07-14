@@ -93,7 +93,7 @@ export class ParserService {
             const currency = extractCurrency(body);
             const billingDate = extractDate(body);
             // Merchant extraction: always use sender's domain
-            const merchant = this.extractMerchantFromEmail(from);
+            const merchant = this.extractMainDomainFromEmail(from);
 
             if (!currency || !billingDate || !merchant) {
                 return null;
@@ -138,7 +138,7 @@ export class ParserService {
             const currency = extractCurrency(body);
             const orderDate = new Date(date); // Always use email sent date
             // Merchant extraction: always use sender's domain
-            const merchant = this.extractMerchantFromEmail(from);
+            const merchant = this.extractMainDomainFromEmail(from);
 
             if (!currency || !merchant) {
                 return null;
@@ -168,7 +168,8 @@ export class ParserService {
         }
     }
 
-    private extractMerchantFromEmail(email: string): string {
+    // Combine extractMerchantFromEmail and extractSenderDomain into one
+    private extractMainDomainFromEmail(email: string): string {
         const domain = email.split('@')[1];
         if (!domain) return 'Unknown';
 
@@ -336,7 +337,7 @@ export class ParserService {
             // Check if email contains unsubscribe links
             if (isUnsubscribeEmail(body, headers)) {
                 // Extract sender domain from email address
-                const senderDomain = this.extractSenderDomain(from);
+                const senderDomain = this.extractMainDomainFromEmail(from);
                 if (senderDomain && !seenSenders.has(senderDomain)) {
                     seenSenders.add(senderDomain);
                     unsubscribes.push(senderDomain);
@@ -360,7 +361,7 @@ export class ParserService {
             // Check if email contains unsubscribe links
             if (isUnsubscribeEmail(body, headers)) {
                 // Extract sender domain from email address
-                const senderDomain = this.extractSenderDomain(from);
+                const senderDomain = this.extractMainDomainFromEmail(from);
                 if (senderDomain && !seenSenders.has(senderDomain)) {
                     seenSenders.add(senderDomain);
                     unsubscribes.push(senderDomain);
@@ -369,15 +370,6 @@ export class ParserService {
         }
 
         return unsubscribes;
-    }
-
-    private extractSenderDomain(email: string): string {
-        const match = email.match(/@([^>]+)/);
-        if (match) {
-            const domain = match[1].split('.')[0]; // Get the main domain part
-            return domain.charAt(0).toUpperCase() + domain.slice(1);
-        }
-        return '';
     }
 }
 
