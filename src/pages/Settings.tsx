@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel, Alert, Divider } from '@mui/material';
 import { purgeDatabase, getDatabaseStats } from '../utils/dbUtils';
+import { useInboxData } from '../contexts/InboxDataContext';
 
 const Settings: React.FC = () => {
     const [dbStats, setDbStats] = useState<{ tokens: number; rawEmails: number; parsedItems: number } | null>(null);
     const [isPurging, setIsPurging] = useState(false);
     const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
+    const { testParsing } = useInboxData();
 
     const handlePurgeDatabase = async () => {
         if (window.confirm('Are you sure you want to purge all data? This will remove all emails, subscriptions, and orders. This action cannot be undone.')) {
@@ -33,6 +35,14 @@ const Settings: React.FC = () => {
             setDbStats(stats);
         } catch (error) {
             console.error('Error getting stats:', error);
+        }
+    };
+
+    const handleTestParsing = async () => {
+        try {
+            await testParsing();
+        } catch (error) {
+            console.error('Error testing parsing:', error);
         }
     };
 
@@ -103,6 +113,14 @@ const Settings: React.FC = () => {
                         sx={{ mr: 2 }}
                     >
                         Get Database Stats
+                    </Button>
+
+                    <Button
+                        variant="outlined"
+                        onClick={handleTestParsing}
+                        sx={{ mr: 2 }}
+                    >
+                        Test Parsing
                     </Button>
 
                     {dbStats && (
