@@ -1,7 +1,38 @@
 import React, { useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse } from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useInboxData } from '../contexts/InboxDataContext';
 import UnsubscribeList from '../components/UnsubscribeList/UnsubscribeList';
+
+function CollapsibleOrderRow({ order }: { order: any }) {
+    const [open, setOpen] = React.useState(false);
+    return (
+        <>
+            <TableRow sx={{ '& > *': { borderBottom: 'unset' }, cursor: 'pointer' }} onClick={() => setOpen(!open)}>
+                <TableCell sx={{ width: 40, p: 0 }}>
+                    <IconButton aria-label="expand row" size="small">
+                        {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                    </IconButton>
+                </TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>{new Date(order.date).toLocaleDateString()}</TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>{order.merchant}</TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>{order.amount ? `$${order.amount}` : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
+                    <Collapse in={open} timeout="auto" unmountOnExit>
+                        <Box margin={1}>
+                            <Typography variant="subtitle2">From: {order.from}</Typography>
+                            {order.subject && <Typography variant="subtitle2">Subject: {order.subject}</Typography>}
+                            {order.to && <Typography variant="subtitle2">To: {order.to}</Typography>}
+                        </Box>
+                    </Collapse>
+                </TableCell>
+            </TableRow>
+        </>
+    );
+}
 
 const Dashboard: React.FC = () => {
     const { subscriptions, orders, unsubscribes, reload } = useInboxData();
@@ -54,18 +85,15 @@ const Dashboard: React.FC = () => {
                                 Recent Orders ({orders.length})
                             </Typography>
                             {orders.length > 0 ? (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                    {orders.map((order) => (
-                                        <Box key={order.id} sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-                                            <Typography variant="body2" fontWeight="medium">
-                                                {order.merchant}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                ${isNaN(order.amount) || order.amount === undefined ? '0.00' : order.amount} - {new Date(order.date).toLocaleDateString()}
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
+                                <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                    <Table size="small" aria-label="collapsible table">
+                                        <TableBody>
+                                            {orders.map((order) => (
+                                                <CollapsibleOrderRow key={order.id} order={order} />
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
                             ) : (
                                 <Typography variant="body2" color="text.secondary">
                                     No orders found

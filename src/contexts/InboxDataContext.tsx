@@ -21,10 +21,18 @@ interface Subscription {
 
 interface Order {
     id: string;
+    orderNumber: string;
     merchant: string;
     amount: number;
+    currency: string;
     date: string;
-    refundStatus: string;
+    status: 'pending' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+    refundStatus: 'none' | 'partial' | 'full';
+    emailId: string;
+    items: any[];
+    createdAt: string;
+    updatedAt: string;
+    from: string; // sender's email address
 }
 
 interface InboxDataContextType {

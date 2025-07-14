@@ -69,14 +69,15 @@ export class ParserService {
         return record.snippet || '';
     }
 
-    private extractEmailHeaders(message: GmailMessage): { from: string; subject: string; date: string } {
+    private extractEmailHeaders(message: GmailMessage): { from: string; subject: string; date: string; to?: string } {
         const headers = message.payload.headers;
 
         const from = headers.find(h => h.name === 'From')?.value || '';
         const subject = headers.find(h => h.name === 'Subject')?.value || '';
         const date = headers.find(h => h.name === 'Date')?.value || '';
+        const to = headers.find(h => h.name === 'To')?.value || '';
 
-        return { from, subject, date };
+        return { from, subject, date, to };
     }
 
     parseSubscription(message: GmailMessage): Subscription | null {
@@ -127,18 +128,18 @@ export class ParserService {
     parseOrder(message: GmailMessage): Order | null {
         try {
             const body = this.extractEmailBody(message);
-            const { from, subject, date } = this.extractEmailHeaders(message);
+            const { from, subject, date, to } = this.extractEmailHeaders(message);
 
             if (!isOrderEmail(subject + ' ' + body)) {
                 return null;
             }
 
             const currency = extractCurrency(body);
-            const orderDate = extractDate(body) || new Date(date);
+            const orderDate = new Date(date); // Always use email sent date
             // Improved merchant extraction logic
             let merchant = null;
             // Try COMMON pattern only
-            const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
+            const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple)/i;
             const commonMatch = (subject + ' ' + body).match(commonPattern);
             if (commonMatch) {
                 merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
@@ -163,6 +164,9 @@ export class ParserService {
                 items: this.extractOrderItems(body),
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
+                from, // sender's email address
+                subject, // email subject
+                to, // recipient's email address
             };
         } catch (error) {
             console.error('Error parsing order:', error);

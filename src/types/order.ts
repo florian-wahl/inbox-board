@@ -11,6 +11,9 @@ export interface Order {
     items: OrderItem[];
     createdAt: string;
     updatedAt: string;
+    from: string; // NEW FIELD: sender's email address
+    subject: string; // NEW FIELD: email subject
+    to?: string; // NEW FIELD: recipient's email address (optional)
 }
 
 export interface OrderItem {
