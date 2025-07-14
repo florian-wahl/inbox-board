@@ -178,7 +178,7 @@ const Dashboard: React.FC = () => {
             </Typography>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                <Box sx={{ width: '100%', maxWidth: 600 }}>
+                <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                         <Typography variant="h6" gutterBottom>
                             Subscriptions ({subscriptions.length})
@@ -201,7 +201,7 @@ const Dashboard: React.FC = () => {
                     </Box>
                 </Box>
 
-                <Box sx={{ width: '100%', maxWidth: 600 }}>
+                <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                         <Typography variant="h6" gutterBottom>
                             Recent Orders ({orders.length})
@@ -224,7 +224,7 @@ const Dashboard: React.FC = () => {
                     </Box>
                 </Box>
 
-                <Box sx={{ width: '100%', maxWidth: 600 }}>
+                <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                         <Typography variant="h6" gutterBottom>
                             Unsubscribe List ({unsubscribes.length})
@@ -234,7 +234,7 @@ const Dashboard: React.FC = () => {
                                 <Table size="small" aria-label="collapsible table">
                                     <TableBody>
                                         {unsubscribes.map((sender) => (
-                                            <CollapsibleUnsubscribeRow key={sender.domain} sender={sender} />
+                                            <CollapsibleUnsubscribeRow key={sender.id} sender={sender} />
                                         ))}
                                     </TableBody>
                                 </Table>

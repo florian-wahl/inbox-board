@@ -199,6 +199,74 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         }
     };
 
+    // Function to parse a batch of emails immediately after fetching
+    const parseBatchEmails = async (newEmailRecords: any[]) => {
+        try {
+            if (newEmailRecords.length === 0) return;
+
+            // Convert new records to GmailMessage format
+            const gmailMessages = newEmailRecords.map(record => {
+                let bodyData = record.decodedBody || record.body || record.snippet;
+                if (isBase64(bodyData)) {
+                    try {
+                        bodyData = atob(bodyData);
+                    } catch (e) {
+                        // If decode fails, keep as is
+                    }
+                }
+
+                return {
+                    id: record.gmailId,
+                    threadId: record.threadId,
+                    labelIds: record.labelIds,
+                    snippet: record.snippet,
+                    historyId: record.historyId || '1',
+                    internalDate: record.internalDate || new Date(record.date).getTime().toString(),
+                    payload: {
+                        partId: '',
+                        mimeType: record.mimeType || 'text/plain',
+                        filename: '',
+                        headers: record.allHeaders || [
+                            { name: 'From', value: record.from },
+                            { name: 'Subject', value: record.subject },
+                            { name: 'Date', value: record.date }
+                        ],
+                        body: {
+                            size: record.snippet.length,
+                            data: bodyData
+                        },
+                        parts: record.parts
+                    },
+                    sizeEstimate: record.sizeEstimate || record.snippet.length
+                };
+            });
+
+            // Filter out promotional emails for order parsing
+            const nonPromotionalMessages = gmailMessages.filter(msg => !msg.labelIds?.includes('CATEGORY_PROMOTIONS'));
+
+            // Parse the batch
+            const subscriptions = parserService.parseSubscriptions(gmailMessages);
+            const orders = parserService.parseOrders(nonPromotionalMessages);
+            const unsubscribes = parserService.parseUnsubscribesFromRecords(newEmailRecords);
+
+            // Insert parsed results (duplicates will be handled by insert functions)
+            for (const subscription of subscriptions) {
+                await insertParsedSubscription(subscriptionToDB(subscription));
+            }
+            for (const order of orders) {
+                await insertParsedOrder(orderToDB(order));
+            }
+            for (const unsubscribe of unsubscribes) {
+                const gmailId = unsubscribe.from + '-' + unsubscribe.domain + '-' + unsubscribe.date;
+                await insertParsedUnsubscribe(unsubscribeSenderToDB(unsubscribe, gmailId));
+            }
+
+            console.log(`Parsed batch: ${subscriptions.length} subscriptions, ${orders.length} orders, ${unsubscribes.length} unsubscribes`);
+        } catch (error) {
+            console.error('Error parsing batch emails:', error);
+        }
+    };
+
     // Remove polling mechanism for background parsing
     // useEffect(() => {
     //     const pollInterval = setInterval(async () => {
@@ -298,29 +366,34 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                 messages = await gmailService.getMessages(newIds);
             }
             const now = Date.now();
+            const newEmailRecords: any[] = []; // Track new records for this batch
+
             for (const message of messages) {
                 const { fullBody, decodedBody, mimeType, parts } = gmailService.extractEmailContent(message.payload, message.snippet);
+                const emailRecord = {
+                    gmailId: message.id,
+                    threadId: message.threadId,
+                    subject: message.payload.headers.find((h: any) => h.name === 'Subject')?.value || '',
+                    from: message.payload.headers.find((h: any) => h.name === 'From')?.value || '',
+                    date: message.payload.headers.find((h: any) => h.name === 'Date')?.value || '',
+                    body: decodedBody || message.snippet,
+                    snippet: message.snippet,
+                    labelIds: message.labelIds,
+                    historyId: message.historyId,
+                    internalDate: message.internalDate,
+                    sizeEstimate: message.sizeEstimate,
+                    fullBody: fullBody,
+                    decodedBody: decodedBody,
+                    allHeaders: message.payload.headers,
+                    mimeType: mimeType,
+                    parts: parts,
+                    createdAt: now,
+                    updatedAt: now,
+                };
+
                 try {
-                    await db.rawEmails.add({
-                        gmailId: message.id,
-                        threadId: message.threadId,
-                        subject: message.payload.headers.find((h: any) => h.name === 'Subject')?.value || '',
-                        from: message.payload.headers.find((h: any) => h.name === 'From')?.value || '',
-                        date: message.payload.headers.find((h: any) => h.name === 'Date')?.value || '',
-                        body: decodedBody || message.snippet,
-                        snippet: message.snippet,
-                        labelIds: message.labelIds,
-                        historyId: message.historyId,
-                        internalDate: message.internalDate,
-                        sizeEstimate: message.sizeEstimate,
-                        fullBody: fullBody,
-                        decodedBody: decodedBody,
-                        allHeaders: message.payload.headers,
-                        mimeType: mimeType,
-                        parts: parts,
-                        createdAt: now,
-                        updatedAt: now,
-                    });
+                    await db.rawEmails.add(emailRecord);
+                    newEmailRecords.push(emailRecord);
                     totalInserted++;
                 } catch (error: any) {
                     if (error.name === 'ConstraintError') {
@@ -331,21 +404,26 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     }
                 }
             }
+
+            // Parse this batch immediately after storing
+            if (newEmailRecords.length > 0) {
+                await parseBatchEmails(newEmailRecords);
+            }
+
             totalFetched += messageIds.length;
             if (showProgressBar) {
                 setLoadingProgress(prev => prev + messageIds.length);
             }
-            // Do NOT call loadAndParseEmails here (inside the loop)
             // If there is no nextPageToken, we are done
             if (!pageToken) done = true;
         }
-        // After all batches are done, reload and parse emails ONCE
-        await loadAndParseEmails();
+        // Remove the final parseAllEmails call since we're parsing incrementally
+        // await loadAndParseEmails();
         setLoadingActive(false);
         setLoadingProgress(0);
         setLoadingTotal(0);
         console.log(`Finished fetching emails. Total fetched: ${totalFetched}, total inserted: ${totalInserted}`);
-    }, [DEFAULT_DAYS, DEFAULT_BATCH_SIZE, loadAndParseEmails]);
+    }, [DEFAULT_DAYS, DEFAULT_BATCH_SIZE, parseBatchEmails]);
 
     // Replace reload with batched fetching
     const reload = useCallback(async (batchSize?: number, dateRange?: number, showProgressBar?: boolean): Promise<void> => {

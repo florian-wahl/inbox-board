@@ -11,10 +11,10 @@ export type UnsubscribeSenderDB = ParsedUnsubscribeRecord;
 
 // Helper to convert from DB record to UnsubscribeSender
 export function unsubscribeSenderFromDB(record: ParsedUnsubscribeRecord): UnsubscribeSender {
-    // DB uses gmailId, UnsubscribeSender does not have id, so just omit gmailId
-    // If you want to add id to UnsubscribeSender, you can do so here
+    // Use gmailId as the unique identifier
     const { gmailId, ...rest } = record;
     return {
+        id: gmailId,
         ...rest,
     } as UnsubscribeSender;
 }
@@ -42,6 +42,7 @@ function safeBase64DecodeUTF8(data: string): string {
 
 // New Unsubscribe type for richer data
 export type UnsubscribeSender = {
+    id: string; // Add unique identifier
     domain: string;
     from: string;
     subject: string;
@@ -379,6 +380,7 @@ export class ParserService {
                 // Only keep the most recent email for each domain (by date)
                 if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
                     unsubMap.set(domain, {
+                        id: message.id, // Use message id as unique identifier
                         domain,
                         from,
                         subject,
@@ -419,6 +421,7 @@ export class ParserService {
                 // Only keep the most recent email for each domain (by date)
                 if (!unsubMap.has(domain) || new Date(date) > new Date(unsubMap.get(domain)!.date)) {
                     unsubMap.set(domain, {
+                        id: record.gmailId, // Use gmailId as unique identifier
                         domain,
                         from,
                         subject,
