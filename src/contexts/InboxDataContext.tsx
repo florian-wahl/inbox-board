@@ -5,6 +5,10 @@ import { parserService, UnsubscribeSender } from '../services/ParserService';
 import { GmailMessage, GmailListResponse } from '../types/gmail';
 import { useAuth } from './AuthContext';
 import { getUserPreferences } from '../utils/dbUtils';
+import { insertParsedOrder, insertParsedSubscription, insertParsedUnsubscribe } from '../utils/dbUtils';
+import { orderToDB } from '../types/order';
+import { subscriptionToDB } from '../types/subscription';
+import { unsubscribeSenderToDB } from '../services/ParserService';
 
 interface Email {
     id: string;
@@ -149,7 +153,22 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             const orders = parserService.parseOrders(nonPromotionalMessages);
             const unsubscribes = parserService.parseUnsubscribesFromRecords(rawEmailRecords);
 
-            console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
+            // Insert parsed subscriptions into DB
+            for (const subscription of subscriptions) {
+                await insertParsedSubscription(subscriptionToDB(subscription));
+            }
+            // Insert parsed orders into DB
+            for (const order of orders) {
+                await insertParsedOrder(orderToDB(order));
+            }
+            // Insert parsed unsubscribes into DB
+            for (const unsubscribe of unsubscribes) {
+                // Use a composite key for gmailId if needed
+                const gmailId = unsubscribe.from + '-' + unsubscribe.domain + '-' + unsubscribe.date;
+                await insertParsedUnsubscribe(unsubscribeSenderToDB(unsubscribe, gmailId));
+            }
+
+            console.log(`Parsed and inserted ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes into DB`);
 
             // Update state
             setSubscriptions(subscriptions);

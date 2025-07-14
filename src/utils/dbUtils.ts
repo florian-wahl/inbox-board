@@ -105,30 +105,39 @@ export const setUserPreferences = async (prefs: Partial<UserPreferencesRecord>):
 
 // Insert a parsed order if gmailId does not already exist
 export const insertParsedOrder = async (order: ParsedOrderRecord): Promise<boolean> => {
+    console.log('[DB] Attempting to insert order:', order.gmailId, order);
     const existing = await db.parsedOrders.get(order.gmailId);
     if (!existing) {
         await db.parsedOrders.put(order);
+        console.log('[DB] Order inserted:', order.gmailId);
         return true;
     }
+    console.log('[DB] Duplicate order not inserted:', order.gmailId);
     return false;
 };
 
 // Insert a parsed subscription if gmailId does not already exist
 export const insertParsedSubscription = async (subscription: ParsedSubscriptionRecord): Promise<boolean> => {
+    console.log('[DB] Attempting to insert subscription:', subscription.gmailId, subscription);
     const existing = await db.parsedSubscriptions.get(subscription.gmailId);
     if (!existing) {
         await db.parsedSubscriptions.put(subscription);
+        console.log('[DB] Subscription inserted:', subscription.gmailId);
         return true;
     }
+    console.log('[DB] Duplicate subscription not inserted:', subscription.gmailId);
     return false;
 };
 
 // Insert a parsed unsubscribe entry if gmailId does not already exist
 export const insertParsedUnsubscribe = async (unsubscribe: ParsedUnsubscribeRecord): Promise<boolean> => {
+    console.log('[DB] Attempting to insert unsubscribe:', unsubscribe.gmailId, unsubscribe);
     const existing = await db.parsedUnsubscribeList.get(unsubscribe.gmailId);
     if (!existing) {
         await db.parsedUnsubscribeList.put(unsubscribe);
+        console.log('[DB] Unsubscribe inserted:', unsubscribe.gmailId);
         return true;
     }
+    console.log('[DB] Duplicate unsubscribe not inserted:', unsubscribe.gmailId);
     return false;
 }; 
