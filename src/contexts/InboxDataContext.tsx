@@ -4,6 +4,7 @@ import { gmailService } from '../services/GmailService';
 import { parserService, UnsubscribeSender } from '../services/ParserService';
 import { GmailMessage, GmailListResponse } from '../types/gmail';
 import { useAuth } from './AuthContext';
+import { getUserPreferences } from '../utils/dbUtils';
 
 interface Email {
     id: string;
@@ -310,11 +311,21 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     // Replace reload with batched fetching
     const reload = useCallback(async (batchSize?: number, dateRange?: number, showProgressBar?: boolean): Promise<void> => {
         try {
-            console.log('Reloading inbox data with batched fetching...');
+            let finalBatchSize = batchSize;
+            let finalDateRange = dateRange;
+            let finalShowProgressBar = showProgressBar;
+            // If any are undefined, load from user preferences
+            if (finalBatchSize === undefined || finalDateRange === undefined || finalShowProgressBar === undefined) {
+                const prefs = await getUserPreferences();
+                if (finalBatchSize === undefined) finalBatchSize = prefs?.batchSize ?? DEFAULT_BATCH_SIZE;
+                if (finalDateRange === undefined) finalDateRange = prefs?.dateRange ?? DEFAULT_DAYS;
+                if (finalShowProgressBar === undefined) finalShowProgressBar = prefs?.settings?.showProgressBar ?? false;
+            }
+            console.log('Reloading inbox data with batched fetching...', { finalBatchSize, finalDateRange, finalShowProgressBar });
             await fetchEmailsInBatches({
-                days: dateRange ?? DEFAULT_DAYS,
-                batchSize: batchSize ?? DEFAULT_BATCH_SIZE,
-                showProgressBar: showProgressBar ?? false,
+                days: finalDateRange,
+                batchSize: finalBatchSize,
+                showProgressBar: finalShowProgressBar,
             });
         } catch (error) {
             console.error('Failed to reload inbox data:', error);
