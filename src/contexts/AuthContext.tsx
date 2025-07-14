@@ -128,15 +128,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Store raw emails in database
             const now = Date.now();
             for (const message of messages) {
+                // Extract full email content
+                const { fullBody, decodedBody, mimeType, parts } = gmailService.extractEmailContent(message.payload, message.snippet);
+
                 await db.rawEmails.put({
                     gmailId: message.id,
                     threadId: message.threadId,
                     subject: message.payload.headers.find(h => h.name === 'Subject')?.value || '',
                     from: message.payload.headers.find(h => h.name === 'From')?.value || '',
                     date: message.payload.headers.find(h => h.name === 'Date')?.value || '',
-                    body: message.snippet,
+                    body: decodedBody || message.snippet, // Use decoded body as main body
                     snippet: message.snippet,
                     labelIds: message.labelIds,
+                    // New fields
+                    historyId: message.historyId,
+                    internalDate: message.internalDate,
+                    sizeEstimate: message.sizeEstimate,
+                    fullBody: fullBody,
+                    decodedBody: decodedBody,
+                    allHeaders: message.payload.headers,
+                    mimeType: mimeType,
+                    parts: parts,
                     createdAt: now,
                     updatedAt: now,
                 });

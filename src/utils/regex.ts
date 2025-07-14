@@ -25,8 +25,11 @@ export const MERCHANT_PATTERNS = {
 // Unsubscribe patterns
 export const UNSUBSCRIBE_PATTERNS = {
     LINKS: /(?:href|url)=["']?[^"'\s]*unsubscribe[^"'\s]*["']?/gi,
-    TEXT: /(?:unsubscribe|opt.?out|remove from list|stop receiving)/gi,
+    TEXT: /(?:unsubscribe|opt.?out|remove from list|stop receiving|cancel subscription)/gi,
     BUTTONS: /<[^>]*unsubscribe[^>]*>/gi,
+    LIST_HEADERS: /(?:list-unsubscribe|unsubscribe)/gi,
+    EMAIL_LINKS: /mailto:[^"'\s]*unsubscribe[^"'\s]*/gi,
+    HTTP_LINKS: /https?:\/\/[^"'\s]*unsubscribe[^"'\s]*/gi,
 };
 
 // Email patterns
@@ -107,12 +110,22 @@ export const isOrderEmail = (text: string): boolean => {
     return orderKeywords.some(keyword => lowerText.includes(keyword));
 };
 
-export const isUnsubscribeEmail = (text: string): boolean => {
+export const isUnsubscribeEmail = (text: string, headers?: any[]): boolean => {
     const lowerText = text.toLowerCase();
 
-    // Check for unsubscribe patterns
+    // Check for unsubscribe patterns in email body
     for (const [type, pattern] of Object.entries(UNSUBSCRIBE_PATTERNS)) {
         if (pattern.test(lowerText)) {
+            return true;
+        }
+    }
+
+    // Check for List-Unsubscribe headers
+    if (headers) {
+        const listUnsubscribeHeader = headers.find(h =>
+            h.name.toLowerCase() === 'list-unsubscribe'
+        );
+        if (listUnsubscribeHeader) {
             return true;
         }
     }

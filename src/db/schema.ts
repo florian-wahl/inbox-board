@@ -16,9 +16,19 @@ export interface RawEmailRecord {
     subject: string;
     from: string;
     date: string;
-    body: string;
+    body: string; // This will now be the decoded full body instead of snippet
     snippet: string;
     labelIds: string[];
+    // New fields from Gmail API
+    historyId: string;
+    internalDate: string;
+    sizeEstimate: number;
+    // Full email content and headers
+    fullBody?: string; // Decoded full email content
+    decodedBody?: string; // Decoded full email content for parsing
+    allHeaders: GmailHeader[]; // All email headers
+    mimeType: string;
+    parts?: GmailMessagePart[]; // Multipart content
     createdAt: number;
     updatedAt: number;
 }
@@ -32,6 +42,26 @@ export interface ParsedItemRecord {
     updatedAt: number;
 }
 
+export interface GmailHeader {
+    name: string;
+    value: string;
+}
+
+export interface GmailMessagePart {
+    partId: string;
+    mimeType: string;
+    filename: string;
+    headers: GmailHeader[];
+    body: GmailMessageBody;
+    parts?: GmailMessagePart[];
+}
+
+export interface GmailMessageBody {
+    attachmentId?: string;
+    size: number;
+    data?: string;
+}
+
 export class InboxBoardDB extends Dexie {
     tokens!: Table<TokenRecord>;
     rawEmails!: Table<RawEmailRecord>;
@@ -40,9 +70,9 @@ export class InboxBoardDB extends Dexie {
     constructor() {
         super('InboxBoardDB');
 
-        this.version(2).stores({
+        this.version(3).stores({
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
-            rawEmails: '++id, gmailId, threadId, from, date',
+            rawEmails: '++id, gmailId, threadId, from, date, historyId',
             parsedItems: '++id, type, emailId, createdAt',
         });
     }

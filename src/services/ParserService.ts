@@ -3,28 +3,70 @@ import { Subscription } from '../types/subscription';
 import { Order } from '../types/order';
 import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail } from '../utils/regex';
 import { formatDate } from '../utils/date';
+import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
+
+// Utility function for safe base64 decoding to UTF-8
+function safeBase64DecodeUTF8(data: string): string {
+    if (!data) return '';
+    try {
+        const binary = atob(data);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        return new TextDecoder('utf-8').decode(bytes);
+    } catch (e) {
+        console.warn('Failed to decode base64 as UTF-8:', e);
+        return data;
+    }
+}
 
 export class ParserService {
+
+
+
+
+    // Helper function to safely encode data to Base64
+    private safeBase64Encode(data: string): string {
+        if (!data) return '';
+
+        try {
+            return btoa(unescape(encodeURIComponent(data)));
+        } catch (error) {
+            console.warn('Failed to encode data to Base64, using as-is:', error);
+            return data;
+        }
+    }
+
+    // Helper function to safely create ISO date string
+    private safeToISOString(date: Date | null): string {
+        if (!date || isNaN(date.getTime())) {
+            return new Date().toISOString();
+        }
+        return date.toISOString();
+    }
+
     private extractEmailBody(message: GmailMessage): string {
-        const extractTextFromPart = (part: any): string => {
-            if (part.mimeType === 'text/plain' && part.body.data) {
-                return atob(part.body.data);
-            }
+        const rawData = extractGmailBody(message.payload) || '';
+        return decodeGmailBodyData(rawData);
+    }
 
-            if (part.mimeType === 'text/html' && part.body.data) {
-                // Basic HTML to text conversion
-                const html = atob(part.body.data);
-                return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-            }
+    // New method to extract email body from database record
+    private extractEmailBodyFromRecord(record: any): string {
+        // If we have decoded body content, use it directly
+        if (record.decodedBody) {
+            return record.decodedBody;
+        }
 
-            if (part.parts) {
-                return part.parts.map(extractTextFromPart).join(' ');
-            }
+        // If we have full body content, use it (should already be decoded)
+        if (record.fullBody) {
+            return record.fullBody;
+        }
 
-            return '';
-        };
+        // Fallback to body (which should now be the decoded full body)
+        if (record.body && record.body !== record.snippet) {
+            return record.body;
+        }
 
-        return extractTextFromPart(message.payload);
+        // Final fallback to snippet
+        return record.snippet || '';
     }
 
     private extractEmailHeaders(message: GmailMessage): { from: string; subject: string; date: string } {
@@ -38,84 +80,94 @@ export class ParserService {
     }
 
     parseSubscription(message: GmailMessage): Subscription | null {
-        const body = this.extractEmailBody(message);
-        const { from, subject, date } = this.extractEmailHeaders(message);
+        try {
+            const body = this.extractEmailBody(message);
+            const { from, subject, date } = this.extractEmailHeaders(message);
 
-        if (!isSubscriptionEmail(subject + ' ' + body)) {
+            if (!isSubscriptionEmail(subject + ' ' + body)) {
+                return null;
+            }
+
+            const currency = extractCurrency(body);
+            const billingDate = extractDate(body);
+            // Improved merchant extraction logic
+            let merchant = null;
+            // Try COMMON pattern only
+            const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
+            const commonMatch = (subject + ' ' + body).match(commonPattern);
+            if (commonMatch) {
+                merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
+            } else {
+                merchant = this.extractMerchantFromEmail(from);
+            }
+
+            if (!currency || !billingDate || !merchant) {
+                return null;
+            }
+
+            return {
+                id: message.id,
+                merchant,
+                plan: this.extractPlanName(subject, body),
+                nextBilling: this.safeToISOString(billingDate),
+                amount: currency.amount,
+                currency: currency.currency,
+                billingCycle: this.extractBillingCycle(body),
+                status: 'active',
+                emailId: message.id,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+        } catch (error) {
+            console.error('Error parsing subscription:', error);
             return null;
         }
-
-        const currency = extractCurrency(body);
-        const billingDate = extractDate(body);
-        // Improved merchant extraction logic
-        let merchant = null;
-        // Try COMMON pattern only
-        const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
-        const commonMatch = (subject + ' ' + body).match(commonPattern);
-        if (commonMatch) {
-            merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
-        } else {
-            merchant = this.extractMerchantFromEmail(from);
-        }
-
-        if (!currency || !billingDate || !merchant) {
-            return null;
-        }
-
-        return {
-            id: message.id,
-            merchant,
-            plan: this.extractPlanName(subject, body),
-            nextBilling: billingDate.toISOString(),
-            amount: currency.amount,
-            currency: currency.currency,
-            billingCycle: this.extractBillingCycle(body),
-            status: 'active',
-            emailId: message.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
     }
 
     parseOrder(message: GmailMessage): Order | null {
-        const body = this.extractEmailBody(message);
-        const { from, subject, date } = this.extractEmailHeaders(message);
+        try {
+            const body = this.extractEmailBody(message);
+            const { from, subject, date } = this.extractEmailHeaders(message);
 
-        if (!isOrderEmail(subject + ' ' + body)) {
+            if (!isOrderEmail(subject + ' ' + body)) {
+                return null;
+            }
+
+            const currency = extractCurrency(body);
+            const orderDate = extractDate(body) || new Date(date);
+            // Improved merchant extraction logic
+            let merchant = null;
+            // Try COMMON pattern only
+            const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
+            const commonMatch = (subject + ' ' + body).match(commonPattern);
+            if (commonMatch) {
+                merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
+            } else {
+                merchant = this.extractMerchantFromEmail(from);
+            }
+
+            if (!currency || !merchant) {
+                return null;
+            }
+
+            return {
+                id: message.id,
+                orderNumber: this.extractOrderNumber(subject, body),
+                merchant,
+                amount: currency.amount,
+                currency: currency.currency,
+                date: this.safeToISOString(orderDate),
+                status: this.extractOrderStatus(subject, body),
+                refundStatus: 'none',
+                emailId: message.id,
+                items: this.extractOrderItems(body),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            };
+        } catch (error) {
+            console.error('Error parsing order:', error);
             return null;
         }
-
-        const currency = extractCurrency(body);
-        const orderDate = extractDate(body) || new Date(date);
-        // Improved merchant extraction logic
-        let merchant = null;
-        // Try COMMON pattern only
-        const commonPattern = /(amazon|netflix|spotify|hulu|disney|hbo|youtube|google|apple|microsoft)/i;
-        const commonMatch = (subject + ' ' + body).match(commonPattern);
-        if (commonMatch) {
-            merchant = commonMatch[1].charAt(0).toUpperCase() + commonMatch[1].slice(1);
-        } else {
-            merchant = this.extractMerchantFromEmail(from);
-        }
-
-        if (!currency || !merchant) {
-            return null;
-        }
-
-        return {
-            id: message.id,
-            orderNumber: this.extractOrderNumber(subject, body),
-            merchant,
-            amount: currency.amount,
-            currency: currency.currency,
-            date: orderDate.toISOString(),
-            status: this.extractOrderStatus(subject, body),
-            refundStatus: 'none',
-            emailId: message.id,
-            items: this.extractOrderItems(body),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
     }
 
     private extractMerchantFromEmail(email: string): string {
@@ -267,9 +319,34 @@ export class ParserService {
         for (const message of messages) {
             const body = this.extractEmailBody(message);
             const { from } = this.extractEmailHeaders(message);
+            const headers = message.payload.headers;
 
             // Check if email contains unsubscribe links
-            if (isUnsubscribeEmail(body)) {
+            if (isUnsubscribeEmail(body, headers)) {
+                // Extract sender domain from email address
+                const senderDomain = this.extractSenderDomain(from);
+                if (senderDomain && !seenSenders.has(senderDomain)) {
+                    seenSenders.add(senderDomain);
+                    unsubscribes.push(senderDomain);
+                }
+            }
+        }
+
+        return unsubscribes;
+    }
+
+    // New method to parse unsubscribes from database records
+    parseUnsubscribesFromRecords(records: any[]): string[] {
+        const unsubscribes: string[] = [];
+        const seenSenders = new Set<string>();
+
+        for (const record of records) {
+            const body = this.extractEmailBodyFromRecord(record);
+            const from = record.from || '';
+            const headers = record.allHeaders || [];
+
+            // Check if email contains unsubscribe links
+            if (isUnsubscribeEmail(body, headers)) {
                 // Extract sender domain from email address
                 const senderDomain = this.extractSenderDomain(from);
                 if (senderDomain && !seenSenders.has(senderDomain)) {

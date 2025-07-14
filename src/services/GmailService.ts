@@ -1,6 +1,20 @@
 import { GmailMessage, GmailListResponse, GmailProfile } from '../types/gmail';
+import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
+
+// Utility function for safe base64 decoding to UTF-8
+function safeBase64DecodeUTF8(data: string): string {
+    if (!data) return '';
+    try {
+        const binary = atob(data);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        return new TextDecoder('utf-8').decode(bytes);
+    } catch (e) {
+        console.warn('Failed to decode base64 as UTF-8:', e);
+        return data;
+    }
+}
 
 export class GmailService {
     private accessToken: string | null = null;
@@ -8,6 +22,8 @@ export class GmailService {
     setAccessToken(token: string | null): void {
         this.accessToken = token;
     }
+
+
 
     private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
         if (!this.accessToken) {
@@ -28,6 +44,26 @@ export class GmailService {
         }
 
         return response.json();
+    }
+
+    // Helper function to extract full email content
+    public extractEmailContent(payload: any, snippet: string = ''): { fullBody: string; decodedBody: string; mimeType: string; parts?: any[] } {
+        console.log('Extracting email content from payload...');
+
+        let rawData = extractGmailBody(payload) || snippet;
+        let decoded = decodeGmailBodyData(rawData);
+        let mimeType = payload.mimeType || 'text/plain';
+        let parts = payload.parts;
+
+        console.log('Final extracted content:', {
+            decodedBodyLength: decoded.length,
+            fullBodyLength: decoded.length,
+            mimeType,
+            decodedBodySample: decoded.substring(0, 200) + '...',
+            fullBodySample: decoded.substring(0, 200) + '...',
+        });
+
+        return { fullBody: decoded, decodedBody: decoded, mimeType, parts };
     }
 
     // Helper function to add delay between requests
@@ -71,7 +107,28 @@ export class GmailService {
     }
 
     async getMessage(messageId: string): Promise<GmailMessage> {
-        return this.makeRequest<GmailMessage>(`/messages/${messageId}`);
+        // Request full message content with all metadata
+        const params = new URLSearchParams({
+            format: 'full',
+            metadataHeaders: 'From,Subject,Date,List-Unsubscribe'
+        });
+
+        const message = await this.makeRequest<GmailMessage>(`/messages/${messageId}?${params.toString()}`);
+
+        // Debug: Log the message structure
+        console.log('Gmail message structure:', {
+            id: message.id,
+            hasPayload: !!message.payload,
+            payloadMimeType: message.payload?.mimeType,
+            hasParts: !!message.payload?.parts,
+            partsCount: message.payload?.parts?.length || 0,
+            hasBody: !!message.payload?.body,
+            bodyDataLength: message.payload?.body?.data?.length || 0,
+            snippet: message.snippet?.substring(0, 100) + '...',
+            snippetLength: message.snippet?.length || 0
+        });
+
+        return message;
     }
 
     async getMessages(messageIds: string[]): Promise<GmailMessage[]> {

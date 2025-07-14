@@ -8,7 +8,7 @@ interface Email {
     subject: string;
     from: string;
     date: string;
-    body: string;
+    body: string; // Now contains the full decoded email body
 }
 
 interface Subscription {
@@ -51,6 +51,16 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     const [unsubscribes, setUnsubscribes] = useState<string[]>([]);
     const [lastEmailCount, setLastEmailCount] = useState<number>(0);
 
+    // Helper function to safely encode data to Base64
+    const safeBase64Encode = (data: string): string => {
+        try {
+            return btoa(unescape(encodeURIComponent(data)));
+        } catch (error) {
+            console.warn('Failed to encode data to Base64, using as-is:', error);
+            return data;
+        }
+    };
+
     // Function to parse all emails from database
     const parseAllEmails = async () => {
         try {
@@ -65,35 +75,53 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                 return;
             }
 
-            // Convert to GmailMessage format
-            const gmailMessages = rawEmailRecords.map(record => ({
-                id: record.gmailId,
-                threadId: record.threadId,
-                labelIds: record.labelIds,
-                snippet: record.snippet,
-                historyId: '1',
-                internalDate: new Date(record.date).getTime().toString(),
-                payload: {
-                    partId: '',
-                    mimeType: 'text/plain',
-                    filename: '',
-                    headers: [
-                        { name: 'From', value: record.from },
-                        { name: 'Subject', value: record.subject },
-                        { name: 'Date', value: record.date }
-                    ],
-                    body: {
-                        size: record.snippet.length,
-                        data: btoa(unescape(encodeURIComponent(record.snippet)))
-                    }
-                },
-                sizeEstimate: record.snippet.length
-            }));
+            // Convert to GmailMessage format for backward compatibility
+            const gmailMessages = rawEmailRecords.map(record => {
+                const bodyData = record.decodedBody || record.body || record.snippet;
 
-            // Parse all types
+                // Debug: Log the data being used
+                console.log(`Email ${record.gmailId}:`, {
+                    hasDecodedBody: !!record.decodedBody,
+                    decodedBodyLength: record.decodedBody?.length || 0,
+                    hasBody: !!record.body,
+                    bodyLength: record.body?.length || 0,
+                    snippetLength: record.snippet?.length || 0,
+                    finalBodyDataLength: bodyData.length,
+                    bodyDataSample: bodyData.substring(0, 100) + '...',
+                    isBase64: /^[A-Za-z0-9+/]*={0,2}$/.test(bodyData) && bodyData.length % 4 === 0
+                });
+
+                return {
+                    id: record.gmailId,
+                    threadId: record.threadId,
+                    labelIds: record.labelIds,
+                    snippet: record.snippet,
+                    historyId: record.historyId || '1',
+                    internalDate: record.internalDate || new Date(record.date).getTime().toString(),
+                    payload: {
+                        partId: '',
+                        mimeType: record.mimeType || 'text/plain',
+                        filename: '',
+                        headers: record.allHeaders || [
+                            { name: 'From', value: record.from },
+                            { name: 'Subject', value: record.subject },
+                            { name: 'Date', value: record.date }
+                        ],
+                        body: {
+                            size: record.snippet.length,
+                            // Store the decoded content directly, don't re-encode it
+                            data: bodyData
+                        },
+                        parts: record.parts
+                    },
+                    sizeEstimate: record.sizeEstimate || record.snippet.length
+                };
+            });
+
+            // Parse all types using the new methods
             const subscriptions = parserService.parseSubscriptions(gmailMessages);
             const orders = parserService.parseOrders(gmailMessages);
-            const unsubscribes = parserService.parseUnsubscribes(gmailMessages);
+            const unsubscribes = parserService.parseUnsubscribesFromRecords(rawEmailRecords);
 
             console.log(`Parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
 
@@ -140,7 +168,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     subject: record.subject,
                     from: record.from,
                     date: record.date,
-                    body: record.snippet,
+                    body: record.decodedBody || record.body || record.snippet,
                 }));
 
                 setRawEmails(emails);
@@ -179,15 +207,37 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             // Store raw emails in database
             const now = Date.now();
             for (const message of recentMessages) {
+                // Extract full email content
+                const { fullBody, decodedBody, mimeType, parts } = gmailService.extractEmailContent(message.payload, message.snippet);
+
+                // Debug: Log what we're about to store
+                console.log(`Storing email ${message.id}:`, {
+                    fullBodyLength: fullBody?.length || 0,
+                    decodedBodyLength: decodedBody?.length || 0,
+                    fullBodySample: fullBody?.substring(0, 100) + '...',
+                    decodedBodySample: decodedBody?.substring(0, 100) + '...',
+                    fullBodyIsBase64: fullBody && /^[A-Za-z0-9+/]*={0,2}$/.test(fullBody) && fullBody.length % 4 === 0,
+                    decodedBodyIsBase64: decodedBody && /^[A-Za-z0-9+/]*={0,2}$/.test(decodedBody) && decodedBody.length % 4 === 0,
+                });
+
                 await db.rawEmails.put({
                     gmailId: message.id,
                     threadId: message.threadId,
                     subject: message.payload.headers.find(h => h.name === 'Subject')?.value || '',
                     from: message.payload.headers.find(h => h.name === 'From')?.value || '',
                     date: message.payload.headers.find(h => h.name === 'Date')?.value || '',
-                    body: message.snippet,
+                    body: decodedBody || message.snippet, // Use decoded body as main body
                     snippet: message.snippet,
                     labelIds: message.labelIds,
+                    // New fields
+                    historyId: message.historyId,
+                    internalDate: message.internalDate,
+                    sizeEstimate: message.sizeEstimate,
+                    fullBody: fullBody,
+                    decodedBody: decodedBody,
+                    allHeaders: message.payload.headers,
+                    mimeType: mimeType,
+                    parts: parts,
                     createdAt: now,
                     updatedAt: now,
                 });
