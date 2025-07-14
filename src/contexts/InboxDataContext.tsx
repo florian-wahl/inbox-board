@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { db } from '../db';
 import { gmailService } from '../services/GmailService';
 import { parserService, UnsubscribeSender } from '../services/ParserService';
 import { GmailMessage, GmailListResponse } from '../types/gmail';
+import { useAuth } from './AuthContext';
 
 interface Email {
     id: string;
@@ -65,6 +66,16 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     const [loadingProgress, setLoadingProgress] = useState<number>(0);
     const [loadingTotal, setLoadingTotal] = useState<number>(0);
     const [loadingActive, setLoadingActive] = useState<boolean>(false);
+    const { isAuthenticated, accessToken } = useAuth();
+
+    // Helper to check if a string is base64
+    function isBase64(str: string) {
+        if (!str) return false;
+        // Basic check: base64 strings are usually longer, and must be a multiple of 4
+        if (str.length < 8 || str.length % 4 !== 0) return false;
+        // Only base64 characters
+        return /^[A-Za-z0-9+/]*={0,2}$/.test(str);
+    }
 
     // Function to parse all emails from database
     const parseAllEmails = async () => {
@@ -82,8 +93,15 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
 
             // Convert to GmailMessage format for backward compatibility
             const gmailMessages = rawEmailRecords.map(record => {
-                const bodyData = record.decodedBody || record.body || record.snippet;
-
+                let bodyData = record.decodedBody || record.body || record.snippet;
+                // Only decode if it looks like base64
+                if (isBase64(bodyData)) {
+                    try {
+                        bodyData = atob(bodyData);
+                    } catch (e) {
+                        // If decode fails, keep as is
+                    }
+                }
                 // Debug: Log the data being used
                 console.log(`Email ${record.gmailId}:`, {
                     hasDecodedBody: !!record.decodedBody,
@@ -93,7 +111,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     snippetLength: record.snippet?.length || 0,
                     finalBodyDataLength: bodyData.length,
                     bodyDataSample: bodyData.substring(0, 100) + '...',
-                    isBase64: /^[A-Za-z0-9+/]*={0,2}$/.test(bodyData) && bodyData.length % 4 === 0
+                    isBase64: isBase64(bodyData)
                 });
 
                 return {
@@ -143,33 +161,34 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         }
     };
 
-    // Polling mechanism to check for new emails
-    useEffect(() => {
-        const pollInterval = setInterval(async () => {
-            try {
-                const currentEmailCount = await db.rawEmails.count();
-                if (currentEmailCount !== lastEmailCount) {
-                    console.log(`Email count changed from ${lastEmailCount} to ${currentEmailCount}, re-parsing...`);
-                    await parseAllEmails();
-                }
-            } catch (error) {
-                console.error('Error polling for new emails:', error);
-            }
-        }, 5000); // Check every 5 seconds
+    // Remove polling mechanism for background parsing
+    // useEffect(() => {
+    //     const pollInterval = setInterval(async () => {
+    //         try {
+    //             if (!loadingActive) {
+    //                 const currentEmailCount = await db.rawEmails.count();
+    //                 if (currentEmailCount !== lastEmailCount) {
+    //                     console.log(`Email count changed from ${lastEmailCount} to ${currentEmailCount}, re-parsing...`);
+    //                     await parseAllEmails();
+    //                 }
+    //             }
+    //         } catch (error) {
+    //             console.error('Error polling for new emails:', error);
+    //         }
+    //     }, 5000); // Check every 5 seconds
 
-        return () => clearInterval(pollInterval);
-    }, [lastEmailCount]);
+    //     return () => clearInterval(pollInterval);
+    // }, [lastEmailCount, loadingActive]);
 
-    // Load data from database on initialization
+    // Only load data if authenticated and accessToken is available
     useEffect(() => {
+        if (!isAuthenticated || !accessToken) return;
         const loadData = async () => {
             try {
                 console.log('Loading data from database...');
-
                 // Load raw emails from database
                 const rawEmailRecords = await db.rawEmails.toArray();
                 console.log(`Loaded ${rawEmailRecords.length} raw emails from database`);
-
                 const emails: Email[] = rawEmailRecords.map(record => ({
                     id: record.gmailId,
                     subject: record.subject,
@@ -177,27 +196,37 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     date: record.date,
                     body: record.decodedBody || record.body || record.snippet,
                 }));
-
                 setRawEmails(emails);
                 setLastEmailCount(rawEmailRecords.length);
-
-                // Parse all emails
-                await parseAllEmails();
-
+                // Do NOT call parseAllEmails here
             } catch (error) {
                 console.error('Error loading data from database:', error);
             }
         };
-
         loadData();
-    }, []);
+    }, [isAuthenticated, accessToken]);
 
     // Configurable fetch window and batch size (can be moved to settings/context later)
     const DEFAULT_DAYS = 30;
     const DEFAULT_BATCH_SIZE = 20;
 
+    // Helper to reload and parse emails from DB
+    const loadAndParseEmails = useCallback(async () => {
+        const rawEmailRecords = await db.rawEmails.toArray();
+        const emails: Email[] = rawEmailRecords.map(record => ({
+            id: record.gmailId,
+            subject: record.subject,
+            from: record.from,
+            date: record.date,
+            body: record.decodedBody || record.body || record.snippet,
+        }));
+        setRawEmails(emails);
+        setLastEmailCount(rawEmailRecords.length);
+        await parseAllEmails();
+    }, [parseAllEmails]);
+
     // Batched, progressive email fetching
-    const fetchEmailsInBatches = async ({ days = DEFAULT_DAYS, batchSize = DEFAULT_BATCH_SIZE, showProgressBar = false } = {}) => {
+    const fetchEmailsInBatches = useCallback(async ({ days = DEFAULT_DAYS, batchSize = DEFAULT_BATCH_SIZE, showProgressBar = false } = {}) => {
         let pageToken = undefined;
         const date = new Date();
         date.setDate(date.getDate() - days);
@@ -257,33 +286,20 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             if (showProgressBar) {
                 setLoadingProgress(prev => prev + messageIds.length);
             }
-            await loadAndParseEmails();
+            // Do NOT call loadAndParseEmails here (inside the loop)
             // If there is no nextPageToken, we are done
             if (!pageToken) done = true;
         }
+        // After all batches are done, reload and parse emails ONCE
+        await loadAndParseEmails();
         setLoadingActive(false);
         setLoadingProgress(0);
         setLoadingTotal(0);
         console.log(`Finished fetching emails. Total fetched: ${totalFetched}, total inserted: ${totalInserted}`);
-    };
-
-    // Helper to reload and parse emails from DB
-    const loadAndParseEmails = async () => {
-        const rawEmailRecords = await db.rawEmails.toArray();
-        const emails: Email[] = rawEmailRecords.map(record => ({
-            id: record.gmailId,
-            subject: record.subject,
-            from: record.from,
-            date: record.date,
-            body: record.decodedBody || record.body || record.snippet,
-        }));
-        setRawEmails(emails);
-        setLastEmailCount(rawEmailRecords.length);
-        await parseAllEmails();
-    };
+    }, [DEFAULT_DAYS, DEFAULT_BATCH_SIZE, loadAndParseEmails]);
 
     // Replace reload with batched fetching
-    const reload = async (batchSize?: number, dateRange?: number, showProgressBar?: boolean): Promise<void> => {
+    const reload = useCallback(async (batchSize?: number, dateRange?: number, showProgressBar?: boolean): Promise<void> => {
         try {
             console.log('Reloading inbox data with batched fetching...');
             await fetchEmailsInBatches({
@@ -294,7 +310,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         } catch (error) {
             console.error('Failed to reload inbox data:', error);
         }
-    };
+    }, [fetchEmailsInBatches, DEFAULT_DAYS, DEFAULT_BATCH_SIZE]);
 
     const extendHistory = async (): Promise<void> => {
         // TODO: Implement history extension logic
@@ -357,7 +373,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         }
     };
 
-    const value: InboxDataContextType = {
+    const value = useMemo(() => ({
         rawEmails,
         subscriptions,
         orders,
@@ -369,7 +385,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         loadingProgress,
         loadingTotal,
         loadingActive,
-    };
+    }), [rawEmails, subscriptions, orders, unsubscribes, reload, extendHistory, testParsing, parseAllEmails, loadingProgress, loadingTotal, loadingActive]);
 
     return (
         <InboxDataContext.Provider value={value}>
