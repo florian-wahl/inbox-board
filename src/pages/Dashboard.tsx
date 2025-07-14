@@ -44,18 +44,6 @@ function CollapsibleOrderRow({ order }: { order: any }) {
                                     <Typography component="span" fontWeight="bold">Labels:</Typography> {order.labelIds.join(', ')}
                                 </Typography>
                             )}
-                            {order.headers && order.headers.length > 0 && (
-                                <Box mt={1}>
-                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                                        <Typography component="span" fontWeight="bold">Headers:</Typography>
-                                    </Typography>
-                                    {order.headers.map((header: any, idx: number) => (
-                                        <Typography key={idx} variant="body2" sx={{ ml: 2 }}>
-                                            <Typography component="span" fontWeight="bold">{header.name}:</Typography> {header.value}
-                                        </Typography>
-                                    ))}
-                                </Box>
-                            )}
                         </Box>
                     </Collapse>
                 </TableCell>
@@ -103,18 +91,6 @@ function CollapsibleSubscriptionRow({ subscription }: { subscription: any }) {
                                 <Typography variant="subtitle2">
                                     <Typography component="span" fontWeight="bold">Labels:</Typography> {subscription.labelIds.join(', ')}
                                 </Typography>
-                            )}
-                            {subscription.headers && subscription.headers.length > 0 && (
-                                <Box mt={1}>
-                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                                        <Typography component="span" fontWeight="bold">Headers:</Typography>
-                                    </Typography>
-                                    {subscription.headers.map((header: any, idx: number) => (
-                                        <Typography key={idx} variant="body2" sx={{ ml: 2 }}>
-                                            <Typography component="span" fontWeight="bold">{header.name}:</Typography> {header.value}
-                                        </Typography>
-                                    ))}
-                                </Box>
                             )}
                         </Box>
                     </Collapse>
