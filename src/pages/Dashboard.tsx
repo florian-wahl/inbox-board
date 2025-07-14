@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse } from '@mui/material';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse, TablePagination } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useInboxData } from '../contexts/InboxDataContext';
@@ -167,6 +167,32 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
 const Dashboard: React.FC = () => {
     const { subscriptions, orders, unsubscribes, reload } = useInboxData();
 
+    // Pagination state for orders
+    const [ordersPage, setOrdersPage] = useState(0);
+    const [ordersRowsPerPage, setOrdersRowsPerPage] = useState(20);
+
+    // Sort orders by date (most recent first) and apply pagination
+    const sortedAndPaginatedOrders = useMemo(() => {
+        const sortedOrders = [...orders].sort((a, b) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            return dateB - dateA; // Most recent first
+        });
+
+        const startIndex = ordersPage * ordersRowsPerPage;
+        return sortedOrders.slice(startIndex, startIndex + ordersRowsPerPage);
+    }, [orders, ordersPage, ordersRowsPerPage]);
+
+    // Handle pagination change
+    const handleOrdersPageChange = (event: unknown, newPage: number) => {
+        setOrdersPage(newPage);
+    };
+
+    const handleOrdersRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setOrdersRowsPerPage(parseInt(event.target.value, 10));
+        setOrdersPage(0);
+    };
+
     // Trigger data loading when dashboard mounts
     useEffect(() => {
     }, [subscriptions.length, orders.length, unsubscribes.length]);
@@ -207,15 +233,28 @@ const Dashboard: React.FC = () => {
                             Recent Orders ({orders.length})
                         </Typography>
                         {orders.length > 0 ? (
-                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
-                                <Table size="small" aria-label="collapsible table">
-                                    <TableBody>
-                                        {orders.map((order) => (
-                                            <CollapsibleOrderRow key={order.id} order={order} />
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <>
+                                <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                    <Table size="small" aria-label="collapsible table">
+                                        <TableBody>
+                                            {sortedAndPaginatedOrders.map((order) => (
+                                                <CollapsibleOrderRow key={order.id} order={order} />
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                                <TablePagination
+                                    component="div"
+                                    count={orders.length}
+                                    page={ordersPage}
+                                    onPageChange={handleOrdersPageChange}
+                                    rowsPerPage={ordersRowsPerPage}
+                                    onRowsPerPageChange={handleOrdersRowsPerPageChange}
+                                    rowsPerPageOptions={[10, 20, 50]}
+                                    labelRowsPerPage="Rows per page:"
+                                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+                                />
+                            </>
                         ) : (
                             <Typography variant="body2" color="text.secondary">
                                 No orders found
