@@ -6,9 +6,9 @@ import { GmailMessage, GmailListResponse } from '../types/gmail';
 import { useAuth } from './AuthContext';
 import { getUserPreferences } from '../utils/dbUtils';
 import { insertParsedOrder, insertParsedSubscription, insertParsedUnsubscribe } from '../utils/dbUtils';
-import { orderToDB } from '../types/order';
-import { subscriptionToDB } from '../types/subscription';
-import { unsubscribeSenderToDB } from '../services/ParserService';
+import { orderToDB, orderFromDB } from '../types/order';
+import { subscriptionToDB, subscriptionFromDB } from '../types/subscription';
+import { unsubscribeSenderToDB, unsubscribeSenderFromDB } from '../services/ParserService';
 
 interface Email {
     id: string;
@@ -64,9 +64,16 @@ interface InboxDataProviderProps {
 
 export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }) => {
     const [rawEmails, setRawEmails] = useState<Email[]>([]);
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+    // Remove state for orders, subscriptions, unsubscribes
+    // const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+    // const [orders, setOrders] = useState<Order[]>([]);
+    // const [unsubscribes, setUnsubscribes] = useState<UnsubscribeSender[]>([]);
+
+    // Load orders, subscriptions, and unsubscribes from DB
     const [orders, setOrders] = useState<Order[]>([]);
+    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [unsubscribes, setUnsubscribes] = useState<UnsubscribeSender[]>([]);
+
     const [lastEmailCount, setLastEmailCount] = useState<number>(0);
     const [loadingProgress, setLoadingProgress] = useState<number>(0);
     const [loadingTotal, setLoadingTotal] = useState<number>(0);
@@ -163,7 +170,6 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             }
             // Insert parsed unsubscribes into DB
             for (const unsubscribe of unsubscribes) {
-                // Use a composite key for gmailId if needed
                 const gmailId = unsubscribe.from + '-' + unsubscribe.domain + '-' + unsubscribe.date;
                 await insertParsedUnsubscribe(unsubscribeSenderToDB(unsubscribe, gmailId));
             }
@@ -171,9 +177,9 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             console.log(`Parsed and inserted ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes into DB`);
 
             // Update state
-            setSubscriptions(subscriptions);
-            setOrders(orders);
-            setUnsubscribes(unsubscribes);
+            // setSubscriptions(subscriptions); // Removed
+            // setOrders(orders); // Removed
+            // setUnsubscribes(unsubscribes); // Removed
             setLastEmailCount(rawEmailRecords.length);
 
         } catch (error) {
@@ -223,6 +229,19 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         };
         loadData();
     }, [isAuthenticated, accessToken]);
+
+    // Load orders, subscriptions, and unsubscribes from DB
+    useEffect(() => {
+        const loadFromDB = async () => {
+            const orderRecords = await db.parsedOrders.toArray();
+            setOrders(orderRecords.map(orderFromDB));
+            const subscriptionRecords = await db.parsedSubscriptions.toArray();
+            setSubscriptions(subscriptionRecords.map(subscriptionFromDB));
+            const unsubscribeRecords = await db.parsedUnsubscribeList.toArray();
+            setUnsubscribes(unsubscribeRecords.map(unsubscribeSenderFromDB));
+        };
+        loadFromDB();
+    }, [rawEmails.length, lastEmailCount]);
 
     // Configurable fetch window and batch size (can be moved to settings/context later)
     const DEFAULT_DAYS = 30;
