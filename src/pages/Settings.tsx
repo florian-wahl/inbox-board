@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel, Alert, Divider } from '@mui/material';
 import { purgeDatabase, getDatabaseStats, decodeExistingEmails } from '../utils/dbUtils';
 import { useInboxData } from '../contexts/InboxDataContext';
+import LinearProgress from '@mui/material/LinearProgress';
 
 const Settings: React.FC = () => {
     const [dbStats, setDbStats] = useState<{ tokens: number; rawEmails: number; parsedItems: number } | null>(null);
@@ -9,7 +10,12 @@ const Settings: React.FC = () => {
     const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
     const [isDecoding, setIsDecoding] = useState(false);
     const [decodeMessage, setDecodeMessage] = useState<string | null>(null);
-    const { testParsing } = useInboxData();
+    const { testParsing, reload, loadingProgress, loadingTotal, loadingActive } = useInboxData();
+
+    // New state for batch size, date range, and progress bar
+    const [batchSize, setBatchSize] = useState<number>(20);
+    const [dateRange, setDateRange] = useState<number>(30);
+    const [showProgressBar, setShowProgressBar] = useState<boolean>(true);
 
     const handlePurgeDatabase = async () => {
         if (window.confirm('Are you sure you want to purge all data? This will remove all emails, subscriptions, and orders. This action cannot be undone.')) {
@@ -100,6 +106,11 @@ const Settings: React.FC = () => {
         }
     };
 
+    // Handler to reload emails with new settings
+    const handleReloadWithSettings = async () => {
+        await reload(batchSize, dateRange, showProgressBar);
+    };
+
     return (
         <Box>
             <Typography variant="h4" gutterBottom>
@@ -123,18 +134,43 @@ const Settings: React.FC = () => {
                 </Typography>
                 <TextField
                     fullWidth
-                    label="Cache Size (MB)"
+                    label="Batch Size"
                     type="number"
                     margin="normal"
-                    defaultValue={100}
+                    value={batchSize}
+                    onChange={e => setBatchSize(Number(e.target.value))}
+                    inputProps={{ min: 1, max: 100 }}
                 />
                 <TextField
                     fullWidth
-                    label="Sync Frequency (minutes)"
+                    label="Date Range (days)"
                     type="number"
                     margin="normal"
-                    defaultValue={30}
+                    value={dateRange}
+                    onChange={e => setDateRange(Number(e.target.value))}
+                    inputProps={{ min: 1, max: 365 }}
                 />
+                <FormControlLabel
+                    control={<Switch checked={showProgressBar} onChange={e => setShowProgressBar(e.target.checked)} />}
+                    label="Show progress bar during email loading"
+                />
+                <Box sx={{ mt: 2 }}>
+                    <Button variant="contained" color="primary" onClick={handleReloadWithSettings}>
+                        Reload Emails with New Settings
+                    </Button>
+                </Box>
+                {/* Visual progress bar */}
+                {showProgressBar && loadingActive && (
+                    <Box sx={{ mt: 2 }}>
+                        <LinearProgress
+                            variant={loadingTotal ? 'determinate' : 'indeterminate'}
+                            value={loadingTotal ? Math.min(100, ((loadingProgress || 0) / loadingTotal) * 100) : undefined}
+                        />
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                            Loading emails... {loadingProgress || 0} / {loadingTotal || '?'}
+                        </Typography>
+                    </Box>
+                )}
 
                 <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                     Preferences

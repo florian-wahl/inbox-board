@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 import { db } from '../db';
 import { gmailService } from '../services/GmailService';
 import { parserService, UnsubscribeSender } from '../services/ParserService';
+import { GmailMessage, GmailListResponse } from '../types/gmail';
 
 interface Email {
     id: string;
@@ -40,10 +41,13 @@ interface InboxDataContextType {
     subscriptions: Subscription[];
     orders: Order[];
     unsubscribes: UnsubscribeSender[];
-    reload: () => Promise<void>;
+    reload: (batchSize?: number, dateRange?: number, showProgressBar?: boolean) => Promise<void>;
     extendHistory: () => Promise<void>;
-    testParsing: () => Promise<void>; // Add test function to context
-    triggerParsing: () => Promise<void>; // Add method to manually trigger parsing
+    testParsing: () => Promise<void>;
+    triggerParsing: () => Promise<void>;
+    loadingProgress?: number;
+    loadingTotal?: number;
+    loadingActive?: boolean;
 }
 
 const InboxDataContext = createContext<InboxDataContextType | undefined>(undefined);
@@ -58,16 +62,9 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
     const [orders, setOrders] = useState<Order[]>([]);
     const [unsubscribes, setUnsubscribes] = useState<UnsubscribeSender[]>([]);
     const [lastEmailCount, setLastEmailCount] = useState<number>(0);
-
-    // Helper function to safely encode data to Base64
-    const safeBase64Encode = (data: string): string => {
-        try {
-            return btoa(unescape(encodeURIComponent(data)));
-        } catch (error) {
-            console.warn('Failed to encode data to Base64, using as-is:', error);
-            return data;
-        }
-    };
+    const [loadingProgress, setLoadingProgress] = useState<number>(0);
+    const [loadingTotal, setLoadingTotal] = useState<number>(0);
+    const [loadingActive, setLoadingActive] = useState<boolean>(false);
 
     // Function to parse all emails from database
     const parseAllEmails = async () => {
@@ -195,51 +192,54 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         loadData();
     }, []);
 
-    const reload = async (): Promise<void> => {
-        try {
-            console.log('Reloading inbox data...');
+    // Configurable fetch window and batch size (can be moved to settings/context later)
+    const DEFAULT_DAYS = 30;
+    const DEFAULT_BATCH_SIZE = 20;
 
-            // Fetch raw emails from Gmail service
-            const recentMessages = await gmailService.getRecentMessages(7);
-            console.log(`Fetched ${recentMessages.length} recent messages`);
-
-            // Convert to Email format and update state
-            const emails: Email[] = recentMessages.map(msg => ({
-                id: msg.id,
-                subject: msg.payload?.headers?.find(h => h.name === 'Subject')?.value || '',
-                from: msg.payload?.headers?.find(h => h.name === 'From')?.value || '',
-                date: msg.payload?.headers?.find(h => h.name === 'Date')?.value || '',
-                body: msg.snippet || '',
-            }));
-
-            setRawEmails(emails);
-
-            // Store raw emails in database
+    // Batched, progressive email fetching
+    const fetchEmailsInBatches = async ({ days = DEFAULT_DAYS, batchSize = DEFAULT_BATCH_SIZE, showProgressBar = false } = {}) => {
+        let pageToken = undefined;
+        const date = new Date();
+        date.setDate(date.getDate() - days);
+        const query = `after:${date.toISOString().split('T')[0]}`;
+        let totalFetched = 0;
+        let totalInserted = 0;
+        let done = false;
+        setLoadingActive(showProgressBar);
+        setLoadingProgress(0);
+        setLoadingTotal(0);
+        // Estimate total count (optional, can be improved)
+        let estimatedTotal = 0;
+        if (showProgressBar) {
+            const response: GmailListResponse = await gmailService.listMessages(query, 1);
+            estimatedTotal = response.resultSizeEstimate || 0;
+            setLoadingTotal(estimatedTotal);
+        }
+        while (!done) {
+            const response: GmailListResponse = await gmailService.listMessages(query, batchSize, pageToken);
+            const messageIds = response.messages?.map((msg: any) => msg.id) || [];
+            pageToken = response.nextPageToken;
+            if (messageIds.length === 0) break;
+            const existingIds = await db.rawEmails.where('gmailId').anyOf(messageIds).primaryKeys();
+            const newIds = messageIds.filter((id: string) => !existingIds.includes(id));
+            // If there are no new IDs and no nextPageToken, or no messageIds at all, break
+            if ((newIds.length === 0 && !pageToken) || messageIds.length === 0) break;
+            let messages: GmailMessage[] = [];
+            if (newIds.length > 0) {
+                messages = await gmailService.getMessages(newIds);
+            }
             const now = Date.now();
-            for (const message of recentMessages) {
-                // Extract full email content
+            for (const message of messages) {
                 const { fullBody, decodedBody, mimeType, parts } = gmailService.extractEmailContent(message.payload, message.snippet);
-
-                // Debug: Log what we're about to store
-                console.log(`Storing email ${message.id}:`, {
-                    fullBodyLength: fullBody?.length || 0,
-                    decodedBodyLength: decodedBody?.length || 0,
-                    fullBodySample: fullBody?.substring(0, 100) + '...',
-                    decodedBodySample: decodedBody?.substring(0, 100) + '...',
-                    fullBodyIsBase64: fullBody && /^[A-Za-z0-9+/]*={0,2}$/.test(fullBody) && fullBody.length % 4 === 0,
-                    decodedBodyIsBase64: decodedBody && /^[A-Za-z0-9+/]*={0,2}$/.test(decodedBody) && decodedBody.length % 4 === 0,
-                });
-
                 await db.rawEmails.put({
                     gmailId: message.id,
                     threadId: message.threadId,
-                    subject: message.payload.headers.find(h => h.name === 'Subject')?.value || '',
-                    from: message.payload.headers.find(h => h.name === 'From')?.value || '',
-                    date: message.payload.headers.find(h => h.name === 'Date')?.value || '',
-                    body: decodedBody || message.snippet, // Use decoded body as main body
+                    subject: message.payload.headers.find((h: any) => h.name === 'Subject')?.value || '',
+                    from: message.payload.headers.find((h: any) => h.name === 'From')?.value || '',
+                    date: message.payload.headers.find((h: any) => h.name === 'Date')?.value || '',
+                    body: decodedBody || message.snippet,
                     snippet: message.snippet,
                     labelIds: message.labelIds,
-                    // New fields
                     historyId: message.historyId,
                     internalDate: message.internalDate,
                     sizeEstimate: message.sizeEstimate,
@@ -251,13 +251,46 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     createdAt: now,
                     updatedAt: now,
                 });
+                totalInserted++;
             }
+            totalFetched += messageIds.length;
+            if (showProgressBar) {
+                setLoadingProgress(prev => prev + messageIds.length);
+            }
+            await loadAndParseEmails();
+            // If there is no nextPageToken, we are done
+            if (!pageToken) done = true;
+        }
+        setLoadingActive(false);
+        setLoadingProgress(0);
+        setLoadingTotal(0);
+        console.log(`Finished fetching emails. Total fetched: ${totalFetched}, total inserted: ${totalInserted}`);
+    };
 
-            // Trigger parsing of all emails (including new ones)
-            await parseAllEmails();
+    // Helper to reload and parse emails from DB
+    const loadAndParseEmails = async () => {
+        const rawEmailRecords = await db.rawEmails.toArray();
+        const emails: Email[] = rawEmailRecords.map(record => ({
+            id: record.gmailId,
+            subject: record.subject,
+            from: record.from,
+            date: record.date,
+            body: record.decodedBody || record.body || record.snippet,
+        }));
+        setRawEmails(emails);
+        setLastEmailCount(rawEmailRecords.length);
+        await parseAllEmails();
+    };
 
-            console.log(`Reload completed - parsed ${subscriptions.length} subscriptions, ${orders.length} orders, and ${unsubscribes.length} unsubscribes`);
-
+    // Replace reload with batched fetching
+    const reload = async (batchSize?: number, dateRange?: number, showProgressBar?: boolean): Promise<void> => {
+        try {
+            console.log('Reloading inbox data with batched fetching...');
+            await fetchEmailsInBatches({
+                days: dateRange ?? DEFAULT_DAYS,
+                batchSize: batchSize ?? DEFAULT_BATCH_SIZE,
+                showProgressBar: showProgressBar ?? false,
+            });
         } catch (error) {
             console.error('Failed to reload inbox data:', error);
         }
@@ -332,7 +365,10 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
         reload,
         extendHistory,
         testParsing,
-        triggerParsing: parseAllEmails, // Expose the parsing function
+        triggerParsing: parseAllEmails,
+        loadingProgress,
+        loadingTotal,
+        loadingActive,
     };
 
     return (
