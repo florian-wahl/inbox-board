@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { db } from '../db';
 
+// Google OAuth configuration
+const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_SCOPES = [
+    'https://www.googleapis.com/auth/gmail.readonly'
+].join(' ');
+
 interface AuthContextType {
     accessToken: string | null;
     isAuthenticated: boolean;
@@ -13,6 +19,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface AuthProviderProps {
     children: ReactNode;
+}
+
+// Google Identity Services types
+declare global {
+    interface Window {
+        google: {
+            accounts: {
+                oauth2: {
+                    initTokenClient: (config: any) => any;
+                };
+            };
+        };
+    }
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
@@ -38,26 +57,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const login = async (): Promise<void> => {
         try {
-            // TODO: Implement OAuth flow with Gmail API
-            console.log('Login functionality to be implemented');
+            if (!window.google) {
+                throw new Error('Google Identity Services not loaded');
+            }
 
-            // For now, save dummy tokens to database
-            const dummyAccessToken = 'dummy-access-token-' + Date.now();
-            const dummyRefreshToken = 'dummy-refresh-token-' + Date.now();
-            const now = Date.now();
+            const tokenClient = window.google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: GOOGLE_SCOPES,
+                callback: async (response: any) => {
+                    if (response.error) {
+                        console.error('OAuth error:', response.error);
+                        return;
+                    }
 
-            await db.tokens.add({
-                accessToken: dummyAccessToken,
-                refreshToken: dummyRefreshToken,
-                expiresAt: now + (60 * 60 * 1000), // 1 hour from now
-                createdAt: now,
-                updatedAt: now,
+                    try {
+                        const { access_token, expires_in } = response;
+                        const now = Date.now();
+                        const expiresAt = now + (expires_in * 1000);
+
+                        // For now, we'll use the access token as both access and refresh token
+                        // In a real implementation, you'd get a refresh token from the OAuth flow
+                        const refreshToken = access_token; // Temporary until we implement refresh token flow
+
+                        // Save tokens to database
+                        await db.tokens.add({
+                            accessToken: access_token,
+                            refreshToken: refreshToken,
+                            expiresAt: expiresAt,
+                            createdAt: now,
+                            updatedAt: now,
+                        });
+
+                        setAccessToken(access_token);
+                        setIsAuthenticated(true);
+
+                        console.log('OAuth login successful');
+                    } catch (error) {
+                        console.error('Error saving tokens:', error);
+                    }
+                },
             });
 
-            setAccessToken(dummyAccessToken);
-            setIsAuthenticated(true);
+            // Trigger the OAuth flow
+            tokenClient.requestAccessToken();
         } catch (error) {
-            console.error('Error during login:', error);
+            console.error('Error during OAuth login:', error);
+            throw error;
         }
     };
 
