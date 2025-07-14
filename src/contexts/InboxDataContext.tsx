@@ -88,7 +88,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                         ],
                         body: {
                             size: record.snippet.length,
-                            data: btoa(record.snippet)
+                            data: btoa(unescape(encodeURIComponent(record.snippet)))
                         }
                     },
                     sizeEstimate: record.snippet.length
@@ -251,7 +251,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     ],
                     body: {
                         size: record.snippet.length,
-                        data: btoa(record.snippet)
+                        data: btoa(unescape(encodeURIComponent(record.snippet)))
                     }
                 },
                 sizeEstimate: record.snippet.length

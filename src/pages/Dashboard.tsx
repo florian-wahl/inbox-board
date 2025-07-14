@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import { useInboxData } from '../contexts/InboxDataContext';
 
 const Dashboard: React.FC = () => {
-    const { subscriptions, orders, unsubscribes } = useInboxData();
+    const { subscriptions, orders, unsubscribes, reload } = useInboxData();
+
+    // Trigger data loading when dashboard mounts
+    useEffect(() => {
+        console.log('Dashboard mounted - checking for parsed data...');
+        console.log('Current subscriptions:', subscriptions.length);
+        console.log('Current orders:', orders.length);
+    }, [subscriptions.length, orders.length]);
 
     return (
         <Box>
