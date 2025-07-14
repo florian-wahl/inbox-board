@@ -5,7 +5,7 @@ import { useInboxData } from '../contexts/InboxDataContext';
 import LinearProgress from '@mui/material/LinearProgress';
 
 const Settings: React.FC = () => {
-    const [dbStats, setDbStats] = useState<{ tokens: number; rawEmails: number; parsedItems: number } | null>(null);
+    const [dbStats, setDbStats] = useState<{ tokens: number; rawEmails: number } | null>(null);
     const [isPurging, setIsPurging] = useState(false);
     const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
     const [isDecoding, setIsDecoding] = useState(false);
@@ -236,8 +236,7 @@ const Settings: React.FC = () => {
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="body2" color="text.secondary">
                                 Tokens: {dbStats.tokens} |
-                                Raw Emails: {dbStats.rawEmails} |
-                                Parsed Items: {dbStats.parsedItems}
+                                Raw Emails: {dbStats.rawEmails}
                             </Typography>
                         </Box>
                     )}

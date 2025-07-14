@@ -33,15 +33,6 @@ export interface RawEmailRecord {
     updatedAt: number;
 }
 
-export interface ParsedItemRecord {
-    id?: number;
-    type: 'subscription' | 'order' | 'unsubscribe';
-    emailId: string;
-    data: any; // JSON data for the parsed item
-    createdAt: number;
-    updatedAt: number;
-}
-
 export interface UserPreferencesRecord {
     id?: number;
     batchSize: number;
@@ -72,7 +63,6 @@ export interface GmailMessageBody {
 export class InboxBoardDB extends Dexie {
     tokens!: Table<TokenRecord>;
     rawEmails!: Table<RawEmailRecord>;
-    parsedItems!: Table<ParsedItemRecord>;
     userPreferences!: Table<UserPreferencesRecord>;
 
     constructor() {
@@ -81,7 +71,6 @@ export class InboxBoardDB extends Dexie {
         this.version(4).stores({
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
             rawEmails: '++id, &gmailId, threadId, from, date, historyId', // gmailId is now unique
-            parsedItems: '++id, type, emailId, createdAt',
             userPreferences: '++id',
         });
     }

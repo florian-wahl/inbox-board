@@ -6,7 +6,6 @@ export const purgeDatabase = async (): Promise<void> => {
         // Clear all tables
         await db.tokens.clear();
         await db.rawEmails.clear();
-        await db.parsedItems.clear();
 
     } catch (error) {
         console.error('Error purging database:', error);
@@ -17,17 +16,15 @@ export const purgeDatabase = async (): Promise<void> => {
 export const getDatabaseStats = async (): Promise<{
     tokens: number;
     rawEmails: number;
-    parsedItems: number;
 }> => {
     try {
         const tokens = await db.tokens.count();
         const rawEmails = await db.rawEmails.count();
-        const parsedItems = await db.parsedItems.count();
 
-        return { tokens, rawEmails, parsedItems };
+        return { tokens, rawEmails };
     } catch (error) {
         console.error('Error getting database stats:', error);
-        return { tokens: 0, rawEmails: 0, parsedItems: 0 };
+        return { tokens: 0, rawEmails: 0 };
     }
 };
 

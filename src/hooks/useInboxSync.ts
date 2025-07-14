@@ -45,26 +45,8 @@ export const useInboxSync = () => {
 
             // Step 4: Save to database
             updateProgress(80);
-            await db.transaction('rw', db.parsedItems, async () => {
-                for (const subscription of subscriptions) {
-                    await db.parsedItems.put({
-                        type: 'subscription',
-                        emailId: subscription!.emailId,
-                        data: subscription!,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-                for (const order of orders) {
-                    await db.parsedItems.put({
-                        type: 'order',
-                        emailId: order!.emailId,
-                        data: order!,
-                        createdAt: Date.now(),
-                        updatedAt: Date.now(),
-                    });
-                }
-            });
+            // Removed db.parsedItems transaction and put calls
+            // You may want to process subscriptions/orders here if needed
 
             updateProgress(100);
             setLastSync(new Date());
@@ -95,26 +77,8 @@ export const useInboxSync = () => {
                     .map(msg => parserService.parseOrder(msg))
                     .filter(Boolean);
 
-                await db.transaction('rw', db.parsedItems, async () => {
-                    for (const subscription of subscriptions) {
-                        await db.parsedItems.put({
-                            type: 'subscription',
-                            emailId: subscription!.emailId,
-                            data: subscription!,
-                            createdAt: Date.now(),
-                            updatedAt: Date.now(),
-                        });
-                    }
-                    for (const order of orders) {
-                        await db.parsedItems.put({
-                            type: 'order',
-                            emailId: order!.emailId,
-                            data: order!,
-                            createdAt: Date.now(),
-                            updatedAt: Date.now(),
-                        });
-                    }
-                });
+                // Removed db.parsedItems transaction and put calls
+                // You may want to process subscriptions/orders here if needed
             }
 
             setLastSync(new Date());
