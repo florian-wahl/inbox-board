@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, TextField, Button, Switch, FormControlLabel, Alert, Divider, FormControl, FormLabel, RadioGroup, Radio } from '@mui/material';
-import { purgeDatabase, getDatabaseStats, decodeExistingEmails, getUserPreferences, setUserPreferences } from '../utils/dbUtils';
+import { Box, Typography, TextField, Button, Switch, FormControlLabel, Alert, Divider, FormControl, FormLabel, RadioGroup, Radio } from '@mui/material';
+import { purgeDatabase, getUserPreferences, setUserPreferences } from '../utils/dbUtils';
 import { useInboxData } from '../contexts/InboxDataContext';
-import LinearProgress from '@mui/material/LinearProgress';
 import { useUI, ThemeMode } from '../contexts/UIContext';
 
 const Settings: React.FC = () => {
-    const [dbStats, setDbStats] = useState<{ tokens: number; rawEmails: number } | null>(null);
     const [isPurging, setIsPurging] = useState(false);
     const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
-    const [isDecoding, setIsDecoding] = useState(false);
-    const [decodeMessage, setDecodeMessage] = useState<string | null>(null);
-    const { testParsing, reload, loadingProgress, loadingTotal, loadingActive } = useInboxData();
+    const { reload } = useInboxData();
     const { theme, setTheme } = useUI();
 
-    // New state for batch size, date range, and progress bar
+    // Configuration state
     const [batchSize, setBatchSize] = useState<number>(30);
     const [dateRange, setDateRange] = useState<number>(15);
     const [showProgressBar, setShowProgressBar] = useState<boolean>(true);
@@ -43,9 +39,6 @@ const Settings: React.FC = () => {
             try {
                 await purgeDatabase();
                 setPurgeMessage('Database purged successfully!');
-                // Refresh stats
-                const stats = await getDatabaseStats();
-                setDbStats(stats);
             } catch (error) {
                 setPurgeMessage('Error purging database. Please try again.');
                 console.error('Purge error:', error);
@@ -55,73 +48,6 @@ const Settings: React.FC = () => {
         }
     };
 
-    const handleGetStats = async () => {
-        try {
-            const stats = await getDatabaseStats();
-            setDbStats(stats);
-        } catch (error) {
-            console.error('Error getting stats:', error);
-        }
-    };
-
-    const handleTestParsing = async () => {
-        try {
-            await testParsing();
-        } catch (error) {
-            console.error('Error testing parsing:', error);
-        }
-    };
-
-    const handleDecodeExistingEmails = async () => {
-        if (window.confirm('This will decode any base64 encoded email content in your database. This may take a moment. Continue?')) {
-            setIsDecoding(true);
-            setDecodeMessage(null);
-
-            try {
-                const result = await decodeExistingEmails();
-                setDecodeMessage(`Successfully decoded ${result.updated} out of ${result.total} email records!`);
-                // Refresh stats
-                const stats = await getDatabaseStats();
-                setDbStats(stats);
-            } catch (error) {
-                setDecodeMessage('Error decoding existing emails. Please try again.');
-                console.error('Decode error:', error);
-            } finally {
-                setIsDecoding(false);
-            }
-        }
-    };
-
-    const handleTestNewEmailFetch = async () => {
-        try {
-            const { gmailService } = await import('../services/GmailService');
-            const messages = await gmailService.getRecentMessages(1);
-
-            if (messages.length > 0) {
-                const message = messages[0];
-                const { fullBody, decodedBody, mimeType, parts } = gmailService.extractEmailContent(message.payload, message.snippet);
-
-                console.log('Test email extraction results:', {
-                    messageId: message.id,
-                    fullBodyLength: fullBody?.length || 0,
-                    decodedBodyLength: decodedBody?.length || 0,
-                    fullBodySample: fullBody?.substring(0, 100) + '...',
-                    decodedBodySample: decodedBody?.substring(0, 100) + '...',
-                    fullBodyIsBase64: fullBody && /^[A-Za-z0-9+/]*={0,2}$/.test(fullBody) && fullBody.length % 4 === 0,
-                    decodedBodyIsBase64: decodedBody && /^[A-Za-z0-9+/]*={0,2}$/.test(decodedBody) && decodedBody.length % 4 === 0,
-                });
-
-                setDecodeMessage(`Test completed. Check console for details. FullBody: ${fullBody?.length || 0} chars, DecodedBody: ${decodedBody?.length || 0} chars`);
-            } else {
-                setDecodeMessage('No recent messages found to test');
-            }
-        } catch (error) {
-            console.error('Error testing new email fetch:', error);
-            setDecodeMessage('Error testing new email fetch. Check console for details.');
-        }
-    };
-
-    // Handler to reload emails with new settings
     const handleReloadWithSettings = async () => {
         await reload(batchSize, dateRange, showProgressBar);
     };
@@ -135,7 +61,6 @@ const Settings: React.FC = () => {
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-
                         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                             Sync Settings
                         </Typography>
@@ -166,19 +91,6 @@ const Settings: React.FC = () => {
                                 Reload Emails with New Settings
                             </Button>
                         </Box>
-                        {/* Remove visual progress bar and loading count from here */}
-
-                        <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
-                            Preferences
-                        </Typography>
-                        <FormControlLabel
-                            control={<Switch defaultChecked />}
-                            label="Auto-sync on startup"
-                        />
-                        <FormControlLabel
-                            control={<Switch />}
-                            label="Show progress bar"
-                        />
 
                         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                             Appearance
@@ -196,12 +108,6 @@ const Settings: React.FC = () => {
                                 <FormControlLabel value="system" control={<Radio />} label="System" />
                             </RadioGroup>
                         </FormControl>
-
-                        <Box sx={{ mt: 3 }}>
-                            <Button variant="contained" color="primary">
-                                Export Data (JSON)
-                            </Button>
-                        </Box>
                     </Box>
                 </Box>
 
@@ -210,50 +116,6 @@ const Settings: React.FC = () => {
                         <Typography variant="h6" gutterBottom>
                             Database Management
                         </Typography>
-
-                        <Box sx={{ mb: 2 }}>
-                            <Button
-                                variant="outlined"
-                                onClick={handleGetStats}
-                                sx={{ mr: 2 }}
-                            >
-                                Get Database Stats
-                            </Button>
-
-                            <Button
-                                variant="outlined"
-                                onClick={handleTestParsing}
-                                sx={{ mr: 2 }}
-                            >
-                                Test Parsing
-                            </Button>
-
-                            <Button
-                                variant="outlined"
-                                onClick={handleDecodeExistingEmails}
-                                disabled={isDecoding}
-                                sx={{ mr: 2 }}
-                            >
-                                {isDecoding ? 'Decoding...' : 'Decode Existing Emails'}
-                            </Button>
-
-                            <Button
-                                variant="outlined"
-                                onClick={handleTestNewEmailFetch}
-                                sx={{ mr: 2 }}
-                            >
-                                Test New Email Fetch
-                            </Button>
-
-                            {dbStats && (
-                                <Box sx={{ mt: 2 }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Tokens: {dbStats.tokens} |
-                                        Raw Emails: {dbStats.rawEmails}
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Box>
 
                         <Divider sx={{ my: 2 }} />
 
@@ -280,15 +142,6 @@ const Settings: React.FC = () => {
                                 sx={{ mt: 2 }}
                             >
                                 {purgeMessage}
-                            </Alert>
-                        )}
-
-                        {decodeMessage && (
-                            <Alert
-                                severity={decodeMessage.includes('Error') ? 'error' : 'success'}
-                                sx={{ mt: 2 }}
-                            >
-                                {decodeMessage}
                             </Alert>
                         )}
                     </Box>
