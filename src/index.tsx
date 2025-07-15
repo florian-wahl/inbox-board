@@ -58,6 +58,13 @@ function AppInitializer() {
   return null;
 }
 
+// GitHub Pages SPA redirect workaround
+const params = new URLSearchParams(window.location.search);
+const redirect = params.get('redirect');
+if (redirect) {
+  window.history.replaceState({}, '', '/inbox-board' + redirect);
+}
+
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
