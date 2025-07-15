@@ -3,6 +3,7 @@ import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow,
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useInboxData } from '../contexts/InboxDataContext';
+import { useSnackbar } from 'notistack';
 // Remove UnsubscribeList import
 
 function CollapsibleOrderRow({ order }: { order: any }) {
@@ -146,7 +147,7 @@ function getGroupedUnsubscribes(unsubscribes: any[]) {
 
 function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
     const [open, setOpen] = React.useState(false);
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
+    const { enqueueSnackbar } = useSnackbar();
     const uris = sender._parsedUnsubUris || parseListUnsubscribe(sender.listUnsubscribe || '');
 
     // Handler for unsubscribe actions
@@ -156,6 +157,8 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
         const mailtoUri = uris.find((uri: string) => uri.startsWith('mailto:'));
         let success = false;
         let error = '';
+        // Show processing snackbar immediately
+        enqueueSnackbar(`Unsubscribing from ${sender.from}...`, { variant: 'info' });
         try {
             if (httpUri) {
                 // Try HTTP GET
@@ -175,10 +178,12 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
         } catch (e: any) {
             error = e.message || 'Unknown error';
         }
-        setSnackbar({
-            open: true,
-            message: success ? 'Unsubscribe request sent!' : `Failed to unsubscribe: ${error}`,
-        });
+        enqueueSnackbar(
+            success
+                ? `Unsubscribe request sent for ${sender.from}!`
+                : `Failed to unsubscribe from ${sender.from}: ${error}`,
+            { variant: success ? 'success' : 'error' }
+        );
     };
 
     return (
@@ -255,12 +260,6 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                                 </Typography>
                             )}
                         </Box>
-                        <Snackbar
-                            open={snackbar.open}
-                            autoHideDuration={4000}
-                            onClose={() => setSnackbar({ ...snackbar, open: false })}
-                            message={snackbar.message}
-                        />
                     </Collapse>
                 </TableCell>
             </TableRow>

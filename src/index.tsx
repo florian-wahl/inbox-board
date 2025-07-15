@@ -9,6 +9,7 @@ import AppRouter from './router';
 import { useAuth } from './contexts/AuthContext';
 import { useInboxData } from './contexts/InboxDataContext';
 import { useUI } from './contexts/UIContext';
+import { SnackbarProvider } from 'notistack';
 
 function DynamicThemeProvider({ children }: { children: React.ReactNode }) {
   const { theme } = useUI();
@@ -71,15 +72,17 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <InboxDataProvider>
-        <UIProvider>
-          <DynamicThemeProvider>
-            <AppInitializer />
-            <AppRouter />
-          </DynamicThemeProvider>
-        </UIProvider>
-      </InboxDataProvider>
-    </AuthProvider>
+    <SnackbarProvider anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}>
+      <AuthProvider>
+        <InboxDataProvider>
+          <UIProvider>
+            <DynamicThemeProvider>
+              <AppInitializer />
+              <AppRouter />
+            </DynamicThemeProvider>
+          </UIProvider>
+        </InboxDataProvider>
+      </AuthProvider>
+    </SnackbarProvider>
   </React.StrictMode>
 );
