@@ -40,6 +40,13 @@ function safeBase64DecodeUTF8(data: string): string {
     }
 }
 
+// Helper to parse List-Unsubscribe header for URIs
+function parseListUnsubscribeUris(headerValue: string): string[] {
+    if (!headerValue) return [];
+    const matches = Array.from(headerValue.matchAll(/<([^>]+)>/g));
+    return matches.map(m => m[1].trim());
+}
+
 // New Unsubscribe type for richer data
 export type UnsubscribeSender = {
     id: string; // Add unique identifier
@@ -373,8 +380,12 @@ export class ParserService {
                 (h: any) => h.name?.toLowerCase() === 'list-unsubscribe' && h.value && h.value.trim() !== ''
             );
 
-            // Only add if List-Unsubscribe header is present and non-empty
-            if (isUnsubscribeEmail(body, headers) && listUnsubscribeHeader) {
+            // Only add if List-Unsubscribe header is present, non-empty, and contains at least one URI
+            if (
+                isUnsubscribeEmail(body, headers) &&
+                listUnsubscribeHeader &&
+                parseListUnsubscribeUris(listUnsubscribeHeader.value).length > 0
+            ) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
                 // Only keep the most recent email for each domain (by date)
@@ -414,8 +425,12 @@ export class ParserService {
                 (h: any) => h.name?.toLowerCase() === 'list-unsubscribe' && h.value && h.value.trim() !== ''
             );
 
-            // Only add if List-Unsubscribe header is present and non-empty
-            if (isUnsubscribeEmail(body, headers) && listUnsubscribeHeader) {
+            // Only add if List-Unsubscribe header is present, non-empty, and contains at least one URI
+            if (
+                isUnsubscribeEmail(body, headers) &&
+                listUnsubscribeHeader &&
+                parseListUnsubscribeUris(listUnsubscribeHeader.value).length > 0
+            ) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
                 // Only keep the most recent email for each domain (by date)
