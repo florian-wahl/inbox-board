@@ -154,6 +154,11 @@ export class ParserService {
                 return null;
             }
 
+            // Ignore if List-Unsubscribe header is present and non-empty
+            if (hasListUnsubscribeHeader(message.payload.headers)) {
+                return null;
+            }
+
             // Only use contextual amount extraction
             const currency = extractContextualAmount(body);
             const billingDate = extractDate(body);
