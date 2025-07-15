@@ -177,16 +177,16 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>
-                    <span>{sender.from}</span>
+                <TableCell sx={{ border: 0, p: 1, width: '100%' }}>{sender.from}</TableCell>
+                <TableCell sx={{ border: 0, p: 1, whiteSpace: 'nowrap' }}>
                     <Chip
                         label={sender._occurrenceCount}
                         color="default"
                         size="small"
-                        sx={{ ml: 1, verticalAlign: 'middle' }}
+                        sx={{ verticalAlign: 'middle' }}
                     />
                 </TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>
+                <TableCell sx={{ border: 0, p: 1, whiteSpace: 'nowrap' }}>
                     {uris.length > 0 && (
                         <Button
                             variant="contained"
@@ -200,7 +200,7 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                 </TableCell>
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box margin={1} sx={{ wordBreak: 'break-word', whiteSpace: 'pre-line', maxWidth: '100%' }}>
                             <Typography variant="subtitle2">
@@ -365,8 +365,9 @@ const Dashboard: React.FC = () => {
                                     <TableHead>
                                         <TableRow>
                                             <TableCell />
-                                            <TableCell>Sender</TableCell>
-                                            <TableCell>Unsubscribe</TableCell>
+                                            <TableCell sx={{ width: '100%' }}>Sender</TableCell>
+                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>Occurrence</TableCell>
+                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>Unsubscribe</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
