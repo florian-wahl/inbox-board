@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse, TablePagination, TableHead, Button, Snackbar, Chip } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse, TablePagination, TableHead, Button, Snackbar, Chip, Modal, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useInboxData } from '../contexts/InboxDataContext';
@@ -147,25 +147,26 @@ function getGroupedUnsubscribes(unsubscribes: any[]) {
 
 function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
     const [open, setOpen] = React.useState(false);
+    const [modalOpen, setModalOpen] = React.useState(false);
+    const [iframeUrl, setIframeUrl] = React.useState<string | null>(null);
+    const [iframeError, setIframeError] = React.useState(false);
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const uris = sender._parsedUnsubUris || parseListUnsubscribe(sender.listUnsubscribe || '');
 
     // Handler for unsubscribe actions
     const handleUnsubscribe = async () => {
-        // Prefer HTTP(s) over mailto
         const httpUri = uris.find((uri: string) => uri.startsWith('http://') || uri.startsWith('https://'));
         const mailtoUri = uris.find((uri: string) => uri.startsWith('mailto:'));
         let success = false;
         let error = '';
-        // Show processing snackbar immediately and keep its key
         const processingKey = enqueueSnackbar(`Unsubscribing from ${sender.from}...`, { variant: 'info', persist: true });
         try {
             if (httpUri) {
-                window.open(httpUri, '_blank');
-                success = true;
+                setIframeUrl(httpUri);
+                setIframeError(false);
+                setModalOpen(true);
             } else if (mailtoUri) {
                 // Placeholder for mailto unsubscribe
-                // TODO: Implement sending unsubscribe email via Gmail API
                 success = true; // Simulate success
             } else {
                 error = 'No supported unsubscribe method found.';
@@ -183,8 +184,57 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
         }
     };
 
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setIframeUrl(null);
+        setIframeError(false);
+    };
+
+    // Fallback: If iframe fails to load, open in new tab
+    const handleIframeError = () => {
+        setIframeError(true);
+        if (iframeUrl) {
+            window.open(iframeUrl, '_blank');
+        }
+        setModalOpen(false);
+        setIframeUrl(null);
+    };
+
     return (
         <>
+            <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
+                <DialogTitle>Unsubscribe</DialogTitle>
+                <DialogContent sx={{ height: 600, p: 0 }}>
+                    {iframeUrl && !iframeError && (
+                        <iframe
+                            src={iframeUrl}
+                            title="Unsubscribe"
+                            width="100%"
+                            height="100%"
+                            style={{ border: 0, minHeight: 600 }}
+                            onError={handleIframeError}
+                        />
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                    <Box>
+                        {iframeUrl && (
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => {
+                                    window.open(iframeUrl, '_blank');
+                                }}
+                            >
+                                Open in a new tab
+                            </Button>
+                        )}
+                    </Box>
+                    <Box>
+                        <Button onClick={handleCloseModal}>Close</Button>
+                    </Box>
+                </DialogActions>
+            </Dialog>
             <TableRow sx={{ '& > *': { borderBottom: 'unset' }, cursor: 'pointer' }} onClick={() => setOpen(!open)}>
                 <TableCell sx={{ width: 40, p: 0 }}>
                     <IconButton aria-label="expand row" size="small">
