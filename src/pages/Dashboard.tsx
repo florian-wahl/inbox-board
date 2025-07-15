@@ -161,14 +161,8 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
         const processingKey = enqueueSnackbar(`Unsubscribing from ${sender.from}...`, { variant: 'info', persist: true });
         try {
             if (httpUri) {
-                // Try HTTP GET
-                const response = await fetch(httpUri, { method: 'GET' });
-                if (response.ok) {
-                    success = true;
-                } else {
-                    error = `HTTP error: ${response.status}`;
-                    console.error(error);
-                }
+                window.open(httpUri, '_blank');
+                success = true;
             } else if (mailtoUri) {
                 // Placeholder for mailto unsubscribe
                 // TODO: Implement sending unsubscribe email via Gmail API
