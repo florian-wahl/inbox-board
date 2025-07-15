@@ -107,7 +107,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             console.log('Parsing all emails from database...');
 
             // Get all raw emails from database
-            const rawEmailRecords = await db.rawEmails.toArray();
+            const rawEmailRecords = await db.rawEmails.where('parsed').equals(false as any).toArray();
             console.log(`Found ${rawEmailRecords.length} raw emails in database`);
 
             if (rawEmailRecords.length === 0) {
@@ -194,6 +194,14 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             // setUnsubscribes(unsubscribes); // Removed
             setLastEmailCount(rawEmailRecords.length);
 
+            // After inserting parsed results, mark emails as parsed
+            if (rawEmailRecords.length > 0) {
+                const idsToUpdate = rawEmailRecords.map(r => r.id).filter(Boolean);
+                if (idsToUpdate.length > 0) {
+                    await Promise.all(idsToUpdate.map(id => db.rawEmails.update(id, { parsed: true })));
+                }
+            }
+
         } catch (error) {
             console.error('Error parsing emails:', error);
         }
@@ -262,6 +270,14 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             }
 
             console.log(`Parsed batch: ${subscriptions.length} subscriptions, ${orders.length} orders, ${unsubscribes.length} unsubscribes`);
+
+            // After inserting parsed results, mark emails as parsed
+            if (newEmailRecords.length > 0) {
+                const idsToUpdate = newEmailRecords.map(r => r.id).filter(Boolean);
+                if (idsToUpdate.length > 0) {
+                    await Promise.all(idsToUpdate.map(id => db.rawEmails.update(id, { parsed: true })));
+                }
+            }
         } catch (error) {
             console.error('Error parsing batch emails:', error);
         }
@@ -389,6 +405,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                     parts: parts,
                     createdAt: now,
                     updatedAt: now,
+                    parsed: false, // <-- ensure default
                 };
 
                 try {

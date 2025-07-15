@@ -159,6 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     parts: parts,
                     createdAt: now,
                     updatedAt: now,
+                    parsed: false, // <-- ensure default
                 });
             }
 

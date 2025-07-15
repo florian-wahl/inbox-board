@@ -31,6 +31,7 @@ export interface RawEmailRecord {
     parts?: GmailMessagePart[]; // Multipart content
     createdAt: number;
     updatedAt: number;
+    parsed?: boolean; // <-- Add this line, default false
 }
 
 export interface UserPreferencesRecord {
@@ -126,13 +127,18 @@ export class InboxBoardDB extends Dexie {
     constructor() {
         super('InboxBoardDB');
 
-        this.version(6).stores({
+        this.version(7).stores({ // <-- bump version
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
-            rawEmails: '++id, &gmailId, threadId, from, date, historyId',
+            rawEmails: '++id, &gmailId, threadId, from, date, historyId, parsed', // <-- add parsed to index
             userPreferences: '++id',
             parsedOrders: '&gmailId, merchant, date',
             parsedSubscriptions: '&gmailId, merchant, nextBilling',
             parsedUnsubscribes: '&gmailId, domain, from',
+        }).upgrade(tx => {
+            // Set parsed to false for all existing records
+            return tx.table('rawEmails').toCollection().modify((email: any) => {
+                if (email.parsed === undefined) email.parsed = false;
+            });
         });
     }
 }
