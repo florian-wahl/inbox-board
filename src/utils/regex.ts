@@ -244,4 +244,17 @@ export const hasBillingRecurrence = (text: string): boolean => {
         /\$\d+(\.\d+)?\s+every\s+(month|year|week|quarter)/i,
     ];
     return recurrencePatterns.some(pattern => pattern.test(text));
-}; 
+};
+
+// Utility: check if subject contains 'refund' or 'return' (case-insensitive)
+export function isRefundOrReturnSubject(subject: string): boolean {
+    return /\b(refund|return)\b/i.test(subject);
+}
+
+// Utility: check if headers array contains a non-empty List-Unsubscribe header
+export function hasListUnsubscribeHeader(headers: any[]): boolean {
+    if (!Array.isArray(headers)) return false;
+    return headers.some(
+        (h: any) => h.name && h.name.toLowerCase() === 'list-unsubscribe' && h.value && h.value.trim() !== ''
+    );
+} 

@@ -1,7 +1,7 @@
 import { GmailMessage } from '../types/gmail';
 import { Subscription } from '../types/subscription';
 import { Order } from '../types/order';
-import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence, getOrderEmailKeyword, extractContextualAmount } from '../utils/regex';
+import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence, getOrderEmailKeyword, extractContextualAmount, isRefundOrReturnSubject, hasListUnsubscribeHeader } from '../utils/regex';
 import { formatDate } from '../utils/date';
 import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
 import { ParsedUnsubscribeRecord } from '../db/schema';
@@ -200,15 +200,11 @@ export class ParserService {
             }
 
             // Ignore if List-Unsubscribe header is present and non-empty
-            const listUnsubHeader = message.payload.headers?.find(
-                (h: any) => h.name && h.name.toLowerCase() === 'list-unsubscribe' && h.value && h.value.trim() !== ''
-            );
-            if (listUnsubHeader) {
+            if (hasListUnsubscribeHeader(message.payload.headers)) {
                 return null;
             }
 
-            // Ignore if subject contains 'refund' or 'return' (case-insensitive)
-            if (/\b(refund|return)\b/i.test(subject)) {
+            if (isRefundOrReturnSubject(subject)) {
                 return null;
             }
 
