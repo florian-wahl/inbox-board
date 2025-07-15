@@ -1,7 +1,7 @@
 import { GmailMessage } from '../types/gmail';
 import { Subscription } from '../types/subscription';
 import { Order } from '../types/order';
-import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence, getOrderEmailKeyword } from '../utils/regex';
+import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isOrderEmail, isUnsubscribeEmail, hasBillingRecurrence, getOrderEmailKeyword, extractContextualAmount } from '../utils/regex';
 import { formatDate } from '../utils/date';
 import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
 import { ParsedUnsubscribeRecord } from '../db/schema';
@@ -95,29 +95,42 @@ export class ParserService {
     }
 
     private extractEmailBody(message: GmailMessage): string {
-        const rawData = extractGmailBody(message.payload) || '';
-        return decodeGmailBodyData(rawData);
+        const rawData = extractGmailBody(message.payload, true) || '';
+        const decoded = decodeGmailBodyData(rawData);
+        // Convert HTML to text if it looks like HTML, else use as is
+        const isHtml = /<\/?[a-z][\s\S]*>/i.test(decoded);
+        let text = isHtml ? htmlToPlainText(decoded) : decoded;
+        // Normalize whitespace and line breaks
+        text = text.replace(/[\u200B-\u200D\uFEFF]/g, '') // remove invisible chars
+            .replace(/\r\n|\r/g, '\n') // standardize line breaks
+            .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+            .replace(/\n{2,}/g, '\n\n') // collapse multiple newlines
+            .trim();
+        return text;
     }
 
     // New method to extract email body from database record
     private extractEmailBodyFromRecord(record: any): string {
-        // If we have decoded body content, use it directly
+        let text = '';
         if (record.decodedBody) {
-            return record.decodedBody;
+            text = record.decodedBody;
+        } else if (record.fullBody) {
+            text = record.fullBody;
+        } else if (record.body && record.body !== record.snippet) {
+            text = record.body;
+        } else {
+            text = record.snippet || '';
         }
-
-        // If we have full body content, use it (should already be decoded)
-        if (record.fullBody) {
-            return record.fullBody;
-        }
-
-        // Fallback to body (which should now be the decoded full body)
-        if (record.body && record.body !== record.snippet) {
-            return record.body;
-        }
-
-        // Final fallback to snippet
-        return record.snippet || '';
+        // Convert HTML to text if it looks like HTML, else use as is
+        const isHtml = /<\/?[a-z][\s\S]*>/i.test(text);
+        text = isHtml ? htmlToPlainText(text) : text;
+        // Normalize whitespace and line breaks
+        text = text.replace(/[\u200B-\u200D\uFEFF]/g, '') // remove invisible chars
+            .replace(/\r\n|\r/g, '\n') // standardize line breaks
+            .replace(/[ \t]+/g, ' ') // collapse spaces/tabs
+            .replace(/\n{2,}/g, '\n\n') // collapse multiple newlines
+            .trim();
+        return text;
     }
 
     private extractEmailHeaders(message: GmailMessage): { from: string; subject: string; date: string; to?: string } {
@@ -141,7 +154,8 @@ export class ParserService {
                 return null;
             }
 
-            const currency = extractCurrency(body);
+            // Only use contextual amount extraction
+            const currency = extractContextualAmount(body);
             const billingDate = extractDate(body);
             // Merchant extraction: always use sender's domain
             const merchant = this.extractMainDomainFromEmail(from);
@@ -186,7 +200,8 @@ export class ParserService {
             }
 
             const orderMatchKeyword = getOrderEmailKeyword(combinedText);
-            const currency = extractCurrency(body);
+            // Only use contextual amount extraction
+            const currency = extractContextualAmount(body);
             const orderDate = new Date(date); // Always use email sent date
             // Merchant extraction: always use sender's domain
             const merchant = this.extractMainDomainFromEmail(from);
@@ -465,6 +480,16 @@ export class ParserService {
 
         return Array.from(unsubMap.values());
     }
+}
+
+// Add a browser-compatible HTML-to-text function
+function htmlToPlainText(html: string): string {
+    if (typeof window !== 'undefined' && window.DOMParser) {
+        const doc = new window.DOMParser().parseFromString(html, 'text/html');
+        return doc.body.textContent || '';
+    }
+    // Fallback for non-browser (should not happen in React app)
+    return html.replace(/<[^>]+>/g, ' ');
 }
 
 export const parserService = new ParserService(); 

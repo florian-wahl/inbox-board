@@ -39,18 +39,100 @@ export const EMAIL_PATTERNS = {
     DATE: /Date:\s*([^\n\r]+)/gi,
 };
 
+// Robust global currency regex: matches $12.99, USD 1,234.56, €9.99, £10, etc.
+export const GLOBAL_CURRENCY_REGEX = /(?<!\S)(?:\$|USD|EUR|€|£|GBP|CAD|AUD)\s?\d{1,3}(?:[,.\d]*)(?:\.\d{2})?(?!\S)/gi;
+
 export const extractCurrency = (text: string): { amount: number; currency: string } | null => {
-    for (const [currency, pattern] of Object.entries(CURRENCY_PATTERNS)) {
-        pattern.lastIndex = 0; // Reset regex state for global patterns
-        const match = pattern.exec(text);
-        if (match) {
-            return {
-                amount: parseFloat(match[1]),
-                currency: currency === 'GENERIC' ? (match[2] || currency) : currency,
-            };
+    let match: RegExpExecArray | null = null;
+    let lastMatch: RegExpExecArray | null = null;
+    GLOBAL_CURRENCY_REGEX.lastIndex = 0;
+    while ((match = GLOBAL_CURRENCY_REGEX.exec(text)) !== null) {
+        lastMatch = match;
+    }
+    if (lastMatch) {
+        // Extract currency symbol/code and amount
+        const raw = lastMatch[0];
+        const currencyMatch = raw.match(/(USD|EUR|GBP|CAD|AUD|\$|€|£)/i);
+        const amountMatch = raw.match(/\d{1,3}(?:[,.\d]*)(?:\.\d{2})?/);
+        if (currencyMatch && amountMatch) {
+            let currency = currencyMatch[0].toUpperCase();
+            if (currency === '$') currency = 'USD';
+            if (currency === '€') currency = 'EUR';
+            if (currency === '£') currency = 'GBP';
+            // Remove commas from amount for parsing
+            const amount = parseFloat(amountMatch[0].replace(/,/g, ''));
+            return { amount, currency };
         }
     }
     return null;
+};
+
+// Contextual total markers regex (robust: allow up to 5 line breaks/whitespace between marker and amount)
+export const CONTEXT_TOTAL_REGEX = /(?:Total(?: Charged| Amount| Due| Paid)?|Grand Total|Order Total)[\s:\-]*((?:\r?\n|\r|[ \t]){0,5}.*?(?:\$|USD|EUR|€|£|GBP|CAD|AUD)[ ]?\d{1,3}(?:[,.\d]*)(?:\.\d{2})?)/gim;
+
+// Extracts the last amount near a total marker, with currency
+export const extractContextualAmount = (text: string): { amount: number; currency: string } | null => {
+    const totalMarkers = [
+        /total(?: charged| amount| due| paid)?/i,
+        /grand total/i,
+        /order total/i
+    ];
+    const amountPattern = /(\$|USD|EUR|€|£|GBP|CAD|AUD)[ ]?\d{1,3}(?:[,.\d]*)(?:\.\d{2})?/i;
+    const lines = text.split(/\r?\n/).map(l => l.trim());
+    let lastMatch: { amount: number; currency: string } | null = null;
+    for (let i = 0; i < lines.length; i++) {
+        if (totalMarkers.some(marker => marker.test(lines[i]))) {
+            // (1) Check marker line itself
+            let amtMatch = lines[i].match(amountPattern);
+            if (amtMatch) {
+                let currency = amtMatch[1].toUpperCase();
+                if (currency === '$') currency = 'USD';
+                if (currency === '€') currency = 'EUR';
+                if (currency === '£') currency = 'GBP';
+                const amount = parseFloat(amtMatch[0].replace(/[^\d.]/g, ''));
+                if (amount >= 1 && amount <= 10000) {
+                    lastMatch = { amount, currency };
+                }
+            }
+            // (2) Check next 8 non-empty lines
+            let lookahead = 0;
+            let j = i + 1;
+            while (j < lines.length && lookahead < 8) {
+                if (lines[j]) {
+                    amtMatch = lines[j].match(amountPattern);
+                    if (amtMatch) {
+                        let currency = amtMatch[1].toUpperCase();
+                        if (currency === '$') currency = 'USD';
+                        if (currency === '€') currency = 'EUR';
+                        if (currency === '£') currency = 'GBP';
+                        const amount = parseFloat(amtMatch[0].replace(/[^\d.]/g, ''));
+                        if (amount >= 1 && amount <= 10000) {
+                            lastMatch = { amount, currency };
+                        }
+                    }
+                    lookahead++;
+                }
+                j++;
+            }
+            // (3) Check next 200 characters after marker for amount
+            const markerIdx = text.indexOf(lines[i]);
+            if (markerIdx !== -1) {
+                const afterMarker = text.slice(markerIdx, markerIdx + 200);
+                amtMatch = afterMarker.match(amountPattern);
+                if (amtMatch) {
+                    let currency = amtMatch[1].toUpperCase();
+                    if (currency === '$') currency = 'USD';
+                    if (currency === '€') currency = 'EUR';
+                    if (currency === '£') currency = 'GBP';
+                    const amount = parseFloat(amtMatch[0].replace(/[^\d.]/g, ''));
+                    if (amount >= 1 && amount <= 10000) {
+                        lastMatch = { amount, currency };
+                    }
+                }
+            }
+        }
+    }
+    return lastMatch;
 };
 
 export const extractDate = (text: string): Date | null => {
