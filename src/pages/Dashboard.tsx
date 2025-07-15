@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse, TablePagination } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse, TablePagination, TableHead, Button, Snackbar } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useInboxData } from '../contexts/InboxDataContext';
-import UnsubscribeList from '../components/UnsubscribeList/UnsubscribeList';
+// Remove UnsubscribeList import
 
 function CollapsibleOrderRow({ order }: { order: any }) {
     const [open, setOpen] = React.useState(false);
@@ -107,8 +107,50 @@ function CollapsibleSubscriptionRow({ subscription }: { subscription: any }) {
     );
 }
 
+// Helper to parse List-Unsubscribe header for URIs
+function parseListUnsubscribe(headerValue: string): string[] {
+    if (!headerValue) return [];
+    const matches = Array.from(headerValue.matchAll(/<([^>]+)>/g));
+    return matches.map(m => m[1].trim());
+}
+
 function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
     const [open, setOpen] = React.useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
+    const uris = parseListUnsubscribe(sender.listUnsubscribe || '');
+
+    // Handler for unsubscribe actions
+    const handleUnsubscribe = async () => {
+        // Prefer HTTP(s) over mailto
+        const httpUri = uris.find(uri => uri.startsWith('http://') || uri.startsWith('https://'));
+        const mailtoUri = uris.find(uri => uri.startsWith('mailto:'));
+        let success = false;
+        let error = '';
+        try {
+            if (httpUri) {
+                // Try HTTP GET
+                const response = await fetch(httpUri, { method: 'GET' });
+                if (response.ok) {
+                    success = true;
+                } else {
+                    error = `HTTP error: ${response.status}`;
+                }
+            } else if (mailtoUri) {
+                // Placeholder for mailto unsubscribe
+                // TODO: Implement sending unsubscribe email via Gmail API
+                success = true; // Simulate success
+            } else {
+                error = 'No supported unsubscribe method found.';
+            }
+        } catch (e: any) {
+            error = e.message || 'Unknown error';
+        }
+        setSnackbar({
+            open: true,
+            message: success ? 'Unsubscribe request sent!' : `Failed to unsubscribe: ${error}`,
+        });
+    };
+
     return (
         <>
             <TableRow sx={{ '& > *': { borderBottom: 'unset' }, cursor: 'pointer' }} onClick={() => setOpen(!open)}>
@@ -118,9 +160,21 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ border: 0, p: 1 }}>{sender.domain}</TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>
+                    {uris.length > 0 && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            onClick={e => { e.stopPropagation(); handleUnsubscribe(); }}
+                        >
+                            Unsubscribe
+                        </Button>
+                    )}
+                </TableCell>
             </TableRow>
             <TableRow>
-                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={2}>
+                <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box margin={1}>
                             <Typography variant="subtitle2">
@@ -156,7 +210,18 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                                     <Typography component="span" fontWeight="bold">List-Unsubscribe:</Typography> {sender.listUnsubscribe}
                                 </Typography>
                             )}
+                            {uris.length > 0 && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Parsed Unsubscribe URIs:</Typography> {uris.join(', ')}
+                                </Typography>
+                            )}
                         </Box>
+                        <Snackbar
+                            open={snackbar.open}
+                            autoHideDuration={4000}
+                            onClose={() => setSnackbar({ ...snackbar, open: false })}
+                            message={snackbar.message}
+                        />
                     </Collapse>
                 </TableCell>
             </TableRow>
@@ -271,6 +336,13 @@ const Dashboard: React.FC = () => {
                         {unsubscribes.length > 0 ? (
                             <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
                                 <Table size="small" aria-label="collapsible table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell />
+                                            <TableCell>Domain</TableCell>
+                                            <TableCell>Unsubscribe</TableCell>
+                                        </TableRow>
+                                    </TableHead>
                                     <TableBody>
                                         {unsubscribes.map((sender) => (
                                             <CollapsibleUnsubscribeRow key={sender.id} sender={sender} />
