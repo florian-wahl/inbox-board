@@ -5,6 +5,7 @@ import { extractCurrency, extractDate, extractMerchant, isSubscriptionEmail, isO
 import { formatDate } from '../utils/date';
 import { extractGmailBody, decodeGmailBodyData } from '../utils/gmailDecode';
 import { ParsedUnsubscribeRecord } from '../db/schema';
+import { parse as parseDomain } from 'tldts';
 
 // Type alias for DB record
 export type UnsubscribeSenderDB = ParsedUnsubscribeRecord;
@@ -252,24 +253,18 @@ export class ParserService {
 
     // Combine extractMerchantFromEmail and extractSenderDomain into one
     private extractMainDomainFromEmail(email: string): string {
-        const domain = email.split('@')[1];
+        // Remove any leading '<' and trailing '>' and trim whitespace
+        const cleanedEmail = email.replace(/^<|>$/g, '').trim();
+        const domain = cleanedEmail.split('@')[1];
         if (!domain) return 'Unknown';
 
-        // Remove subdomains, get the main domain before the first TLD
-        // e.g., mail.amazon.com -> amazon, shop.mail.amazon.co.uk -> amazon
-        const domainParts = domain.split('.');
-        if (domainParts.length < 2) return domain.charAt(0).toUpperCase() + domain.slice(1);
-        // Find the part before the TLD (last part before .com, .net, etc.)
-        // Handles multi-part TLDs like .co.uk
-        let mainDomain = '';
-        if (domainParts.length >= 3 && domainParts[domainParts.length - 2].length <= 3) {
-            // e.g., amazon.co.uk -> amazon
-            mainDomain = domainParts[domainParts.length - 3];
-        } else {
-            // e.g., merchant.com -> merchant
-            mainDomain = domainParts[domainParts.length - 2];
+        const parsed = parseDomain(domain);
+        if (parsed && parsed.domainWithoutSuffix) {
+            // Capitalize first letter
+            return parsed.domainWithoutSuffix.charAt(0).toUpperCase() + parsed.domainWithoutSuffix.slice(1);
         }
-        return mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1);
+        // fallback: return the domain as-is, capitalized
+        return domain.charAt(0).toUpperCase() + domain.slice(1);
     }
 
     private extractPlanName(subject: string, body: string): string {
