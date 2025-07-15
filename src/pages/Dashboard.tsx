@@ -44,6 +44,16 @@ function CollapsibleOrderRow({ order }: { order: any }) {
                                     <Typography component="span" fontWeight="bold">Labels:</Typography> {order.labelIds.join(', ')}
                                 </Typography>
                             )}
+                            {order.headers && Array.isArray(order.headers) && (
+                                (() => {
+                                    const listUnsubHeader = order.headers.find((h: any) => h.name && h.name.toLowerCase() === 'list-unsubscribe');
+                                    return (
+                                        <Typography variant="subtitle2">
+                                            <Typography component="span" fontWeight="bold">List-Unsubscribe:</Typography> {listUnsubHeader ? listUnsubHeader.value : 'None'}
+                                        </Typography>
+                                    );
+                                })()
+                            )}
                         </Box>
                         {order.orderMatchKeyword && (
                             <Box margin={1}>

@@ -199,6 +199,14 @@ export class ParserService {
                 return null;
             }
 
+            // Ignore if List-Unsubscribe header is present and non-empty
+            const listUnsubHeader = message.payload.headers?.find(
+                (h: any) => h.name && h.name.toLowerCase() === 'list-unsubscribe' && h.value && h.value.trim() !== ''
+            );
+            if (listUnsubHeader) {
+                return null;
+            }
+
             const orderMatchKeyword = getOrderEmailKeyword(combinedText);
             // Only use contextual amount extraction
             const currency = extractContextualAmount(body);
@@ -227,6 +235,8 @@ export class ParserService {
                 subject, // email subject
                 to, // recipient's email address
                 orderMatchKeyword, // NEW FIELD
+                labelIds: message.labelIds,
+                headers: message.payload.headers,
             };
         } catch (error) {
             console.error('Error parsing order:', error);
