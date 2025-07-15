@@ -114,16 +114,30 @@ function parseListUnsubscribe(headerValue: string): string[] {
     return matches.map(m => m[1].trim());
 }
 
+// Group unsubscribes by sender 'from' only, using the last (most recent) parsed unsubscribe URIs for each sender
+function getGroupedUnsubscribes(unsubscribes: any[]) {
+    const groupedMap = new Map();
+    for (const sender of unsubscribes) {
+        // Always overwrite so the last (most recent) is kept
+        groupedMap.set(sender.from, sender);
+    }
+    // Attach parsed URIs for convenience
+    return Array.from(groupedMap.values()).map(sender => ({
+        ...sender,
+        _parsedUnsubUris: parseListUnsubscribe(sender.listUnsubscribe || ''),
+    }));
+}
+
 function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
     const [open, setOpen] = React.useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
-    const uris = parseListUnsubscribe(sender.listUnsubscribe || '');
+    const uris = sender._parsedUnsubUris || parseListUnsubscribe(sender.listUnsubscribe || '');
 
     // Handler for unsubscribe actions
     const handleUnsubscribe = async () => {
         // Prefer HTTP(s) over mailto
-        const httpUri = uris.find(uri => uri.startsWith('http://') || uri.startsWith('https://'));
-        const mailtoUri = uris.find(uri => uri.startsWith('mailto:'));
+        const httpUri = uris.find((uri: string) => uri.startsWith('http://') || uri.startsWith('https://'));
+        const mailtoUri = uris.find((uri: string) => uri.startsWith('mailto:'));
         let success = false;
         let error = '';
         try {
@@ -344,8 +358,8 @@ const Dashboard: React.FC = () => {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {unsubscribes.map((sender) => (
-                                            <CollapsibleUnsubscribeRow key={sender.id} sender={sender} />
+                                        {getGroupedUnsubscribes(unsubscribes).map((sender) => (
+                                            <CollapsibleUnsubscribeRow key={sender.from} sender={sender} />
                                         ))}
                                     </TableBody>
                                 </Table>
