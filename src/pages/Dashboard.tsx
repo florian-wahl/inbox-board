@@ -147,7 +147,7 @@ function getGroupedUnsubscribes(unsubscribes: any[]) {
 
 function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
     const [open, setOpen] = React.useState(false);
-    const { enqueueSnackbar } = useSnackbar();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const uris = sender._parsedUnsubUris || parseListUnsubscribe(sender.listUnsubscribe || '');
 
     // Handler for unsubscribe actions
@@ -157,8 +157,8 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
         const mailtoUri = uris.find((uri: string) => uri.startsWith('mailto:'));
         let success = false;
         let error = '';
-        // Show processing snackbar immediately
-        enqueueSnackbar(`Unsubscribing from ${sender.from}...`, { variant: 'info' });
+        // Show processing snackbar immediately and keep its key
+        const processingKey = enqueueSnackbar(`Unsubscribing from ${sender.from}...`, { variant: 'info', persist: true });
         try {
             if (httpUri) {
                 // Try HTTP GET
@@ -167,6 +167,7 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                     success = true;
                 } else {
                     error = `HTTP error: ${response.status}`;
+                    console.error(error);
                 }
             } else if (mailtoUri) {
                 // Placeholder for mailto unsubscribe
@@ -177,13 +178,15 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
             }
         } catch (e: any) {
             error = e.message || 'Unknown error';
+        } finally {
+            closeSnackbar(processingKey);
+            enqueueSnackbar(
+                success
+                    ? `Unsubscribe request sent for ${sender.from}!`
+                    : `Failed to unsubscribe from ${sender.from}: ${error}`,
+                { variant: success ? 'success' : 'error' }
+            );
         }
-        enqueueSnackbar(
-            success
-                ? `Unsubscribe request sent for ${sender.from}!`
-                : `Failed to unsubscribe from ${sender.from}: ${error}`,
-            { variant: success ? 'success' : 'error' }
-        );
     };
 
     return (
