@@ -159,7 +159,7 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>{sender.domain}</TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>{sender.from}</TableCell>
                 <TableCell sx={{ border: 0, p: 1 }}>
                     {uris.length > 0 && (
                         <Button
@@ -176,7 +176,7 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
             <TableRow>
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box margin={1}>
+                        <Box margin={1} sx={{ wordBreak: 'break-word', whiteSpace: 'pre-line', maxWidth: '100%' }}>
                             <Typography variant="subtitle2">
                                 <Typography component="span" fontWeight="bold">Sender Domain:</Typography> {sender.domain}
                             </Typography>
@@ -339,7 +339,7 @@ const Dashboard: React.FC = () => {
                                     <TableHead>
                                         <TableRow>
                                             <TableCell />
-                                            <TableCell>Domain</TableCell>
+                                            <TableCell>Sender</TableCell>
                                             <TableCell>Unsubscribe</TableCell>
                                         </TableRow>
                                     </TableHead>
