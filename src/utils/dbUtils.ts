@@ -87,7 +87,7 @@ export const decodeExistingEmails = async (): Promise<{ updated: number; total: 
 
             // Update the record if needed
             if (needsUpdate) {
-                await db.rawEmails.update(record.id!, updates);
+                await db.rawEmails.update(record.gmailId, updates);
                 updatedCount++;
             }
         }

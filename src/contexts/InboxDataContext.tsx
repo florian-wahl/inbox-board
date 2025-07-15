@@ -196,7 +196,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
 
             // After inserting parsed results, mark emails as parsed
             if (rawEmailRecords.length > 0) {
-                const idsToUpdate = rawEmailRecords.map(r => r.id).filter(Boolean);
+                const idsToUpdate = rawEmailRecords.map(r => r.gmailId).filter(Boolean);
                 if (idsToUpdate.length > 0) {
                     await Promise.all(idsToUpdate.map(id => db.rawEmails.update(id, { parsed: true })));
                 }
@@ -273,7 +273,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
 
             // After inserting parsed results, mark emails as parsed
             if (newEmailRecords.length > 0) {
-                const idsToUpdate = newEmailRecords.map(r => r.id).filter(Boolean);
+                const idsToUpdate = newEmailRecords.map(r => r.gmailId).filter(Boolean);
                 if (idsToUpdate.length > 0) {
                     await Promise.all(idsToUpdate.map(id => db.rawEmails.update(id, { parsed: true })));
                 }

@@ -10,7 +10,6 @@ export interface TokenRecord {
 }
 
 export interface RawEmailRecord {
-    id?: number;
     gmailId: string;
     threadId: string;
     subject: string;
@@ -127,9 +126,9 @@ export class InboxBoardDB extends Dexie {
     constructor() {
         super('InboxBoardDB');
 
-        this.version(7).stores({ // <-- bump version
+        this.version(8).stores({ // <-- bump version
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
-            rawEmails: '++id, &gmailId, threadId, from, date, historyId, parsed', // <-- add parsed to index
+            rawEmails: '&gmailId, threadId, from, date, historyId, parsed', // Remove ++id, make gmailId the PK
             userPreferences: '++id',
             parsedOrders: '&gmailId, merchant, date',
             parsedSubscriptions: '&gmailId, merchant, nextBilling',
