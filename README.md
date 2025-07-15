@@ -1,46 +1,67 @@
-# Getting Started with Create React App
+# Inbox Board
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Inbox Board is a privacy-first dashboard for managing your email subscriptions and tracking online orders. It connects to your Gmail account (read-only) and automatically detects subscriptions, recent orders, and high-noise senders—helping you unsubscribe and stay organized. All data is stored and processed locally on your device; nothing ever leaves your computer.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Automatic Subscription Detection:** Finds and lists your active email subscriptions.
+- **Order Tracking:** Extracts and displays recent online orders and purchases from your inbox.
+- **Unsubscribe Suggestions:** Identifies high-noise senders and provides one-click unsubscribe options (when available).
+- **Privacy-First:** All email data is processed and stored locally in your browser using IndexedDB. No data is sent to any server.
+- **Configurable Sync:** Choose how many days of email to scan and batch size for syncing.
+- **Dark/Light/System Theme:** Customizable appearance.
+- **Database Management:** Easily purge all data or just email data from your device.
 
-### `npm start`
+## Project Structure
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```
+src/
+  components/         # UI components (AppShell, OrderList, SubscriptionList, etc.)
+  contexts/           # React context providers (Auth, InboxData, UI)
+  db/                 # Local database schema and utilities (IndexedDB via Dexie)
+  hooks/              # Custom React hooks (auth, inbox sync, etc.)
+  pages/              # Main app pages (Dashboard, Settings, Onboarding)
+  services/           # Gmail API and email parsing logic
+  types/              # TypeScript types for Gmail, orders, subscriptions
+  utils/              # Utility functions (date, storage, regex, etc.)
+  App.tsx             # App entry point
+  router.tsx          # App routing
+  index.tsx           # App bootstrap
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Privacy & Data Handling
 
-### `npm test`
+- **Google Login:** Uses Google OAuth to request read-only access to your Gmail. No email is sent or modified.
+- **Local-Only Storage:** All emails, parsed subscriptions, orders, and preferences are stored in your browser (IndexedDB). No cloud or server storage.
+- **Open Source:** You can audit the code to verify privacy claims.
+- **Easy Data Deletion:** Use the Settings page to purge all data or just email data at any time.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Tech Stack
 
-### `npm run build`
+- **React** (TypeScript)
+- **Material UI** for design
+- **Dexie.js** for IndexedDB
+- **Google Gmail API** (read-only)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Getting Started
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+2. **Set up Google OAuth credentials:**
+   - Create a Google Cloud project and OAuth 2.0 Client ID for a web app.
+   - Set the `REACT_APP_GOOGLE_CLIENT_ID` environment variable in a `.env` file.
+3. **Run the app:**
+   ```bash
+   npm start
+   ```
+   The app will open at [http://localhost:3000](http://localhost:3000).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Contributing
 
-### `npm run eject`
+Contributions are welcome! Please open issues or pull requests for bug fixes, features, or suggestions.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+---
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+**Inbox Board** is open source and privacy-focused. Your data stays with you.
