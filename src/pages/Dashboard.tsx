@@ -125,11 +125,13 @@ function getGroupedUnsubscribes(unsubscribes: any[]) {
         countMap.set(sender.from, (countMap.get(sender.from) || 0) + 1);
     }
     // Attach parsed URIs and count for convenience
-    return Array.from(groupedMap.values()).map(sender => ({
-        ...sender,
-        _parsedUnsubUris: parseListUnsubscribe(sender.listUnsubscribe || ''),
-        _occurrenceCount: countMap.get(sender.from) || 1,
-    }));
+    return Array.from(groupedMap.values())
+        .map(sender => ({
+            ...sender,
+            _parsedUnsubUris: parseListUnsubscribe(sender.listUnsubscribe || ''),
+            _occurrenceCount: countMap.get(sender.from) || 1,
+        }))
+        .sort((a, b) => b._occurrenceCount - a._occurrenceCount);
 }
 
 function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
