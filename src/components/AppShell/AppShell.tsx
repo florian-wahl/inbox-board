@@ -7,6 +7,7 @@ import { useUI } from '../../contexts/UIContext';
 import { useInboxData } from '../../contexts/InboxDataContext';
 import BottomSheet from '../BottomSheet/BottomSheet';
 import ProgressBar from '../ProgressBar/ProgressBar';
+import Footer from '../common/Footer';
 import { getUserPreferences } from '../../utils/dbUtils';
 
 const AppShell: React.FC = () => {
@@ -108,6 +109,8 @@ const AppShell: React.FC = () => {
       >
         {bottomSheetContent}
       </BottomSheet>
+
+      <Footer />
     </Box>
   );
 };
