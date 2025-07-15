@@ -279,6 +279,10 @@ const Dashboard: React.FC = () => {
     const [unsubPage, setUnsubPage] = useState(0);
     const [unsubRowsPerPage, setUnsubRowsPerPage] = useState(10);
 
+    // Pagination state for subscriptions
+    const [subsPage, setSubsPage] = useState(0);
+    const [subsRowsPerPage, setSubsRowsPerPage] = useState(10);
+
     // Sort orders by date (most recent first) and apply pagination
     const sortedAndPaginatedOrders = useMemo(() => {
         const sortedOrders = [...orders].sort((a, b) => {
@@ -298,6 +302,12 @@ const Dashboard: React.FC = () => {
         return groupedUnsubscribes.slice(startIndex, startIndex + unsubRowsPerPage);
     }, [groupedUnsubscribes, unsubPage, unsubRowsPerPage]);
 
+    // Paginated subscriptions
+    const paginatedSubscriptions = useMemo(() => {
+        const startIndex = subsPage * subsRowsPerPage;
+        return subscriptions.slice(startIndex, startIndex + subsRowsPerPage);
+    }, [subscriptions, subsPage, subsRowsPerPage]);
+
     // Handle pagination change for orders
     const handleOrdersPageChange = (event: unknown, newPage: number) => {
         setOrdersPage(newPage);
@@ -316,6 +326,16 @@ const Dashboard: React.FC = () => {
     const handleUnsubRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setUnsubRowsPerPage(parseInt(event.target.value, 10));
         setUnsubPage(0);
+    };
+
+    // Handle pagination change for subscriptions
+    const handleSubsPageChange = (event: unknown, newPage: number) => {
+        setSubsPage(newPage);
+    };
+
+    const handleSubsRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSubsRowsPerPage(parseInt(event.target.value, 10));
+        setSubsPage(0);
     };
 
     // Trigger data loading when dashboard mounts
@@ -373,15 +393,28 @@ const Dashboard: React.FC = () => {
                             Subscriptions <Chip label={subscriptions.length} size="small" />
                         </Typography>
                         {subscriptions.length > 0 ? (
-                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
-                                <Table size="small" aria-label="collapsible table">
-                                    <TableBody>
-                                        {subscriptions.map((subscription) => (
-                                            <CollapsibleSubscriptionRow key={subscription.id} subscription={subscription} />
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <>
+                                <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                    <Table size="small" aria-label="collapsible table">
+                                        <TableBody>
+                                            {paginatedSubscriptions.map((subscription) => (
+                                                <CollapsibleSubscriptionRow key={subscription.id} subscription={subscription} />
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                                <TablePagination
+                                    component="div"
+                                    count={subscriptions.length}
+                                    page={subsPage}
+                                    onPageChange={handleSubsPageChange}
+                                    rowsPerPage={subsRowsPerPage}
+                                    onRowsPerPageChange={handleSubsRowsPerPageChange}
+                                    rowsPerPageOptions={[10, 20, 50]}
+                                    labelRowsPerPage="Rows per page:"
+                                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+                                />
+                            </>
                         ) : (
                             <Typography variant="body2" color="text.secondary">
                                 No subscriptions found
