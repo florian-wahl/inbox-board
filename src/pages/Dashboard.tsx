@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse, TablePagination, TableHead, Button, Snackbar } from '@mui/material';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableRow, Paper, IconButton, Collapse, TablePagination, TableHead, Button, Snackbar, Chip } from '@mui/material';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useInboxData } from '../contexts/InboxDataContext';
@@ -115,16 +115,20 @@ function parseListUnsubscribe(headerValue: string): string[] {
 }
 
 // Group unsubscribes by sender 'from' only, using the last (most recent) parsed unsubscribe URIs for each sender
+// Also count the number of occurrences for each sender
 function getGroupedUnsubscribes(unsubscribes: any[]) {
     const groupedMap = new Map();
+    const countMap = new Map();
     for (const sender of unsubscribes) {
         // Always overwrite so the last (most recent) is kept
         groupedMap.set(sender.from, sender);
+        countMap.set(sender.from, (countMap.get(sender.from) || 0) + 1);
     }
-    // Attach parsed URIs for convenience
+    // Attach parsed URIs and count for convenience
     return Array.from(groupedMap.values()).map(sender => ({
         ...sender,
         _parsedUnsubUris: parseListUnsubscribe(sender.listUnsubscribe || ''),
+        _occurrenceCount: countMap.get(sender.from) || 1,
     }));
 }
 
@@ -173,7 +177,15 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>{sender.from}</TableCell>
+                <TableCell sx={{ border: 0, p: 1 }}>
+                    <span>{sender.from}</span>
+                    <Chip
+                        label={sender._occurrenceCount}
+                        color="default"
+                        size="small"
+                        sx={{ ml: 1, verticalAlign: 'middle' }}
+                    />
+                </TableCell>
                 <TableCell sx={{ border: 0, p: 1 }}>
                     {uris.length > 0 && (
                         <Button
