@@ -311,8 +311,8 @@ const Dashboard: React.FC = () => {
                 {/* Recent Orders card FIRST */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Recent Orders ({orders.length})
+                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            Recent Orders <Chip label={orders.length} size="small" />
                         </Typography>
                         {orders.length > 0 ? (
                             <>
@@ -348,8 +348,8 @@ const Dashboard: React.FC = () => {
                 {/* Subscriptions card SECOND */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Subscriptions ({subscriptions.length})
+                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            Subscriptions <Chip label={subscriptions.length} size="small" />
                         </Typography>
                         {subscriptions.length > 0 ? (
                             <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
@@ -372,8 +372,8 @@ const Dashboard: React.FC = () => {
                 {/* Unsubscribe List card THIRD */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Unsubscribe List ({unsubscribes.length})
+                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            Unsubscribe List <Chip label={unsubscribes.length} size="small" />
                         </Typography>
                         {unsubscribes.length > 0 ? (
                             <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
