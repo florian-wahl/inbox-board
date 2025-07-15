@@ -182,7 +182,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
             }
             // Insert parsed unsubscribes into DB
             for (const unsubscribe of unsubscribes) {
-                const gmailId = unsubscribe.from + '-' + unsubscribe.domain + '-' + unsubscribe.date;
+                const gmailId = unsubscribe.id; // Use the real Gmail message id
                 await insertParsedUnsubscribe(unsubscribeSenderToDB(unsubscribe, gmailId));
             }
 
@@ -265,7 +265,7 @@ export const InboxDataProvider: React.FC<InboxDataProviderProps> = ({ children }
                 await insertParsedOrder(orderToDB(order));
             }
             for (const unsubscribe of unsubscribes) {
-                const gmailId = unsubscribe.from + '-' + unsubscribe.domain + '-' + unsubscribe.date;
+                const gmailId = unsubscribe.id; // Use the real Gmail message id
                 await insertParsedUnsubscribe(unsubscribeSenderToDB(unsubscribe, gmailId));
             }
 

@@ -69,9 +69,7 @@ export const useInboxSync = () => {
 
             // Step 6: Save unsubscribes to database
             for (const unsubscribe of unsubscribes) {
-                // Use the 'from' email as a fallback for gmailId if needed, but ideally use message.id if available
-                // Here, we use domain+from+date as a composite fallback if no id is available
-                const gmailId = unsubscribe.from + '-' + unsubscribe.domain + '-' + unsubscribe.date;
+                const gmailId = unsubscribe.id; // Use the real Gmail message id
                 await insertParsedUnsubscribe(unsubscribeSenderToDB(unsubscribe, gmailId));
             }
 
@@ -120,7 +118,7 @@ export const useInboxSync = () => {
 
                 // Save unsubscribes to database
                 for (const unsubscribe of unsubscribes) {
-                    const gmailId = unsubscribe.from + '-' + unsubscribe.domain + '-' + unsubscribe.date;
+                    const gmailId = unsubscribe.id; // Use the real Gmail message id
                     await insertParsedUnsubscribe(unsubscribeSenderToDB(unsubscribe, gmailId));
                 }
             }
