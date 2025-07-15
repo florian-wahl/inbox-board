@@ -194,6 +194,7 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                             variant="contained"
                             color="primary"
                             size="small"
+                            disabled={sender.unsubscribeType !== 'http'}
                             onClick={e => { e.stopPropagation(); handleUnsubscribe(); }}
                         >
                             Unsubscribe

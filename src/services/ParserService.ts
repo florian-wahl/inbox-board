@@ -47,6 +47,15 @@ function parseListUnsubscribeUris(headerValue: string): string[] {
     return matches.map(m => m[1].trim());
 }
 
+// Helper to determine unsubscribe type from parsed URIs
+function getUnsubscribeType(uris: string[]): 'http' | 'mailto' | 'other' {
+    if (uris.length === 0) return 'other';
+    const first = uris[0].trim().toLowerCase();
+    if (first.startsWith('http://') || first.startsWith('https://')) return 'http';
+    if (first.startsWith('mailto:')) return 'mailto';
+    return 'other';
+}
+
 // New Unsubscribe type for richer data
 export type UnsubscribeSender = {
     id: string; // Add unique identifier
@@ -57,6 +66,7 @@ export type UnsubscribeSender = {
     date: string;
     labelIds?: string[];
     listUnsubscribe?: string; // Added field for List-Unsubscribe header
+    unsubscribeType?: 'http' | 'mailto' | 'other';
 };
 
 export class ParserService {
@@ -381,10 +391,11 @@ export class ParserService {
             );
 
             // Only add if List-Unsubscribe header is present, non-empty, and contains at least one URI
+            const uris = listUnsubscribeHeader ? parseListUnsubscribeUris(listUnsubscribeHeader.value) : [];
             if (
                 isUnsubscribeEmail(body, headers) &&
                 listUnsubscribeHeader &&
-                parseListUnsubscribeUris(listUnsubscribeHeader.value).length > 0
+                uris.length > 0
             ) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
@@ -399,6 +410,7 @@ export class ParserService {
                         date,
                         labelIds,
                         listUnsubscribe: listUnsubscribeHeader.value, // Store header value
+                        unsubscribeType: getUnsubscribeType(uris),
                     });
                 }
             }
@@ -426,10 +438,11 @@ export class ParserService {
             );
 
             // Only add if List-Unsubscribe header is present, non-empty, and contains at least one URI
+            const uris = listUnsubscribeHeader ? parseListUnsubscribeUris(listUnsubscribeHeader.value) : [];
             if (
                 isUnsubscribeEmail(body, headers) &&
                 listUnsubscribeHeader &&
-                parseListUnsubscribeUris(listUnsubscribeHeader.value).length > 0
+                uris.length > 0
             ) {
                 // Extract sender domain from email address
                 const domain = this.extractMainDomainFromEmail(from);
@@ -444,6 +457,7 @@ export class ParserService {
                         date,
                         labelIds,
                         listUnsubscribe: listUnsubscribeHeader.value, // Store header value
+                        unsubscribeType: getUnsubscribeType(uris),
                     });
                 }
             }

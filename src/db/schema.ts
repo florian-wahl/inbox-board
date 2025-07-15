@@ -112,6 +112,7 @@ export interface ParsedUnsubscribeRecord {
     date: string;
     labelIds?: string[];
     listUnsubscribe?: string;
+    unsubscribeType?: 'http' | 'mailto' | 'other';
 }
 
 export class InboxBoardDB extends Dexie {
