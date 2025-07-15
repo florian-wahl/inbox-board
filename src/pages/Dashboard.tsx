@@ -308,29 +308,7 @@ const Dashboard: React.FC = () => {
             </Typography>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                <Box sx={{ width: '100%', maxWidth: 800 }}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom>
-                            Subscriptions ({subscriptions.length})
-                        </Typography>
-                        {subscriptions.length > 0 ? (
-                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
-                                <Table size="small" aria-label="collapsible table">
-                                    <TableBody>
-                                        {subscriptions.map((subscription) => (
-                                            <CollapsibleSubscriptionRow key={subscription.id} subscription={subscription} />
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        ) : (
-                            <Typography variant="body2" color="text.secondary">
-                                No subscriptions found
-                            </Typography>
-                        )}
-                    </Box>
-                </Box>
-
+                {/* Recent Orders card FIRST */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                         <Typography variant="h6" gutterBottom>
@@ -367,6 +345,31 @@ const Dashboard: React.FC = () => {
                     </Box>
                 </Box>
 
+                {/* Subscriptions card SECOND */}
+                <Box sx={{ width: '100%', maxWidth: 800 }}>
+                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Subscriptions ({subscriptions.length})
+                        </Typography>
+                        {subscriptions.length > 0 ? (
+                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                <Table size="small" aria-label="collapsible table">
+                                    <TableBody>
+                                        {subscriptions.map((subscription) => (
+                                            <CollapsibleSubscriptionRow key={subscription.id} subscription={subscription} />
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                No subscriptions found
+                            </Typography>
+                        )}
+                    </Box>
+                </Box>
+
+                {/* Unsubscribe List card THIRD */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
                     <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
                         <Typography variant="h6" gutterBottom>
