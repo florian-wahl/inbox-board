@@ -207,6 +207,11 @@ export class ParserService {
                 return null;
             }
 
+            // Ignore if subject contains 'refund' or 'return' (case-insensitive)
+            if (/\b(refund|return)\b/i.test(subject)) {
+                return null;
+            }
+
             const orderMatchKeyword = getOrderEmailKeyword(combinedText);
             // Only use contextual amount extraction
             const currency = extractContextualAmount(body);
