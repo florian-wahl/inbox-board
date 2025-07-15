@@ -35,8 +35,6 @@ jobs:
         with:
           node-version: lts/*
           cache: 'npm'
-      - name: Increase patch version
-        run: npm version patch
       - name: Install dependencies
         run: npm ci
       - name: Create .env file
