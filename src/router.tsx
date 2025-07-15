@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import AppShell from './components/AppShell/AppShell';
 import Dashboard from './pages/Dashboard';
@@ -31,7 +31,7 @@ const AppRouter: React.FC = () => {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* Public routes */}
         <Route
@@ -63,7 +63,7 @@ const AppRouter: React.FC = () => {
           element={<Navigate to={isAuthenticated ? "/dashboard" : "/onboarding"} replace />}
         />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
