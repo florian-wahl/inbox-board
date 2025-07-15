@@ -275,6 +275,10 @@ const Dashboard: React.FC = () => {
     const [ordersPage, setOrdersPage] = useState(0);
     const [ordersRowsPerPage, setOrdersRowsPerPage] = useState(20);
 
+    // Pagination state for unsubscribes
+    const [unsubPage, setUnsubPage] = useState(0);
+    const [unsubRowsPerPage, setUnsubRowsPerPage] = useState(10);
+
     // Sort orders by date (most recent first) and apply pagination
     const sortedAndPaginatedOrders = useMemo(() => {
         const sortedOrders = [...orders].sort((a, b) => {
@@ -287,7 +291,14 @@ const Dashboard: React.FC = () => {
         return sortedOrders.slice(startIndex, startIndex + ordersRowsPerPage);
     }, [orders, ordersPage, ordersRowsPerPage]);
 
-    // Handle pagination change
+    // Grouped unsubscribes and pagination
+    const groupedUnsubscribes = useMemo(() => getGroupedUnsubscribes(unsubscribes), [unsubscribes]);
+    const paginatedUnsubscribes = useMemo(() => {
+        const startIndex = unsubPage * unsubRowsPerPage;
+        return groupedUnsubscribes.slice(startIndex, startIndex + unsubRowsPerPage);
+    }, [groupedUnsubscribes, unsubPage, unsubRowsPerPage]);
+
+    // Handle pagination change for orders
     const handleOrdersPageChange = (event: unknown, newPage: number) => {
         setOrdersPage(newPage);
     };
@@ -295,6 +306,16 @@ const Dashboard: React.FC = () => {
     const handleOrdersRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setOrdersRowsPerPage(parseInt(event.target.value, 10));
         setOrdersPage(0);
+    };
+
+    // Handle pagination change for unsubscribes
+    const handleUnsubPageChange = (event: unknown, newPage: number) => {
+        setUnsubPage(newPage);
+    };
+
+    const handleUnsubRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setUnsubRowsPerPage(parseInt(event.target.value, 10));
+        setUnsubPage(0);
     };
 
     // Trigger data loading when dashboard mounts
@@ -376,23 +397,36 @@ const Dashboard: React.FC = () => {
                             Unsubscribe List <Chip label={unsubscribes.length} size="small" />
                         </Typography>
                         {unsubscribes.length > 0 ? (
-                            <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
-                                <Table size="small" aria-label="collapsible table">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell />
-                                            <TableCell sx={{ width: '100%' }}>Sender</TableCell>
-                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>Occurrence</TableCell>
-                                            <TableCell sx={{ whiteSpace: 'nowrap' }}>Unsubscribe</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {getGroupedUnsubscribes(unsubscribes).map((sender) => (
-                                            <CollapsibleUnsubscribeRow key={sender.from} sender={sender} />
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                            <>
+                                <TableContainer component={Paper} elevation={0} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                                    <Table size="small" aria-label="collapsible table">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell />
+                                                <TableCell sx={{ width: '100%' }}>Sender</TableCell>
+                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>Occurrence</TableCell>
+                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>Unsubscribe</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {paginatedUnsubscribes.map((sender) => (
+                                                <CollapsibleUnsubscribeRow key={sender.from} sender={sender} />
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                                <TablePagination
+                                    component="div"
+                                    count={groupedUnsubscribes.length}
+                                    page={unsubPage}
+                                    onPageChange={handleUnsubPageChange}
+                                    rowsPerPage={unsubRowsPerPage}
+                                    onRowsPerPageChange={handleUnsubRowsPerPageChange}
+                                    rowsPerPageOptions={[10, 20, 50]}
+                                    labelRowsPerPage="Rows per page:"
+                                    labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count}`}
+                                />
+                            </>
                         ) : (
                             <Typography variant="body2" color="text.secondary">
                                 No high-noise senders found
