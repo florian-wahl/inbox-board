@@ -4,7 +4,7 @@ import { gmailService } from '../services/GmailService';
 import { getUserPreferences } from '../utils/dbUtils';
 
 // Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
 const GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/userinfo.email'
@@ -38,6 +38,15 @@ declare global {
     }
 }
 
+declare global {
+    interface ImportMeta {
+        env: {
+            VITE_GOOGLE_CLIENT_ID?: string;
+            [key: string]: any;
+        };
+    }
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,41 +57,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     useEffect(() => {
         const loadTokens = async () => {
             try {
-                console.log('Loading tokens from database...');
-
                 // Test database connection
                 const allTokens = await db.tokens.toArray();
-                console.log('All tokens in database:', allTokens);
 
                 // Try to get the most recent token record
                 let tokenRecord;
                 try {
                     tokenRecord = await db.tokens.orderBy('updatedAt').reverse().first();
                 } catch (error) {
-                    console.log('Could not order by updatedAt, trying to get first record:', error);
                     // Fallback: get the first token record if ordering fails
                     const allTokens = await db.tokens.toArray();
                     tokenRecord = allTokens[0];
                 }
-                console.log('Token record found:', tokenRecord);
 
                 if (tokenRecord && tokenRecord.refreshToken && tokenRecord.accessToken) {
                     // Check if token has expired
                     const now = Date.now();
                     const isExpired = tokenRecord.expiresAt && now > tokenRecord.expiresAt;
 
-                    console.log('Token expiration check:', {
-                        now,
-                        expiresAt: tokenRecord.expiresAt,
-                        isExpired
-                    });
-
                     if (!isExpired) {
                         // Test token validity by making a simple API call
                         try {
                             gmailService.setAccessToken(tokenRecord.accessToken);
                             await gmailService.getProfile();
-                            console.log('Token is valid, user authenticated');
                             setAccessToken(tokenRecord.accessToken);
                             setIsAuthenticated(true);
                         } catch (error) {
@@ -118,14 +115,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Fetch initial emails after successful authentication
     const fetchInitialEmails = async (token: string) => {
         try {
-            console.log('Fetching initial emails...');
-
             // Ensure GmailService has the token
             gmailService.setAccessToken(token);
 
             // Get recent messages (last 7 days to reduce API calls)
             const messages = await gmailService.getRecentMessages(7);
-            console.log(`Fetched ${messages.length} recent messages`);
 
             // Store raw emails in database
             const now = Date.now();
