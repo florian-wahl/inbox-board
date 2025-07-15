@@ -42,6 +42,8 @@ src/
 - **Material UI** for design
 - **Dexie.js** for IndexedDB
 - **Google Gmail API** (read-only)
+- **Vite** for development and build
+- **GitHub Pages** for deployment
 
 ## Getting Started
 
@@ -51,12 +53,37 @@ src/
    ```
 2. **Set up Google OAuth credentials:**
    - Create a Google Cloud project and OAuth 2.0 Client ID for a web app.
-   - Set the `REACT_APP_GOOGLE_CLIENT_ID` environment variable in a `.env` file.
-3. **Run the app:**
+   - Set the `VITE_GOOGLE_CLIENT_ID` environment variable in a `.env` file **(for local development)**.
+   - For GitHub Pages deployment, add `VITE_GOOGLE_CLIENT_ID` as a repository secret in GitHub (see Deployment section).
+3. **Run the app locally:**
    ```bash
-   npm start
+   npm run dev
    ```
-   The app will open at [http://localhost:3000](http://localhost:3000).
+   The app will open at [http://localhost:5173](http://localhost:5173) by default.
+
+## Deployment
+
+This project uses **Vite** for building and **GitHub Pages** for deployment.
+
+### Deploying to GitHub Pages
+
+1. Ensure your repository has the `gh-pages` branch enabled (GitHub will serve from this branch).
+2. Add your `VITE_GOOGLE_CLIENT_ID` as a **GitHub Secret** in your repository settings (Settings → Secrets and variables → Actions → New repository secret).
+3. The deployment workflow will use this secret to inject the environment variable during the build.
+4. To deploy, run:
+   ```bash
+   npm run build
+   npm run deploy
+   ```
+   Or, if using a GitHub Actions workflow, push to `main` and the workflow will handle build and deploy automatically.
+
+### Environment Variables & Secrets
+
+- **Local Development:** Use a `.env` file in the project root:
+  ```env
+  VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+  ```
+- **GitHub Pages Deployment:** Add the same variable as a GitHub Secret. The deployment workflow will read this secret and inject it at build time.
 
 ## Contributing
 
