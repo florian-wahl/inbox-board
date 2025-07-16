@@ -83,13 +83,25 @@ const Settings: React.FC = () => {
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h4" gutterBottom sx={{
+                fontSize: { xs: '1.5rem', sm: '2rem' },
+                mb: { xs: 2, sm: 3 }
+            }}>
                 Settings
             </Typography>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: { xs: 2, sm: 3 }
+            }}>
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                    <Box sx={{
+                        p: { xs: 1.5, sm: 2 },
+                        border: '1px solid #ddd',
+                        borderRadius: 1
+                    }}>
                         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
                             Sync Settings
                         </Typography>
@@ -141,7 +153,11 @@ const Settings: React.FC = () => {
                 </Box>
 
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
+                    <Box sx={{
+                        p: { xs: 1.5, sm: 2 },
+                        border: '1px solid #ddd',
+                        borderRadius: 1
+                    }}>
                         <Typography variant="h6" gutterBottom>
                             Database Management
                         </Typography>

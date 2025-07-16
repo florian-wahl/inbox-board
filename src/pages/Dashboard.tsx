@@ -35,9 +35,9 @@ function CollapsibleOrderRow({ order }: { order: any }) {
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>{new Date(order.date).toLocaleDateString()}</TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>{order.merchant}</TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>{order.amount ? `$${order.amount}` : ''}</TableCell>
+                <TableCell sx={{ border: 0, p: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.875rem', sm: '1rem' } }}>{new Date(order.date).toLocaleDateString()}</TableCell>
+                <TableCell sx={{ border: 0, p: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.875rem', sm: '1rem' } }}>{order.merchant}</TableCell>
+                <TableCell sx={{ border: 0, p: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.875rem', sm: '1rem' } }}>{order.amount ? `$${order.amount}` : ''}</TableCell>
             </TableRow>
             <TableRow>
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
@@ -99,8 +99,8 @@ function CollapsibleSubscriptionRow({ subscription }: { subscription: any }) {
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>{subscription.merchant}</TableCell>
-                <TableCell sx={{ border: 0, p: 1 }}>{subscription.amount ? `$${subscription.amount}` : ''}</TableCell>
+                <TableCell sx={{ border: 0, p: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.875rem', sm: '1rem' } }}>{subscription.merchant}</TableCell>
+                <TableCell sx={{ border: 0, p: { xs: 0.5, sm: 1 }, fontSize: { xs: '0.875rem', sm: '1rem' } }}>{subscription.amount ? `$${subscription.amount}` : ''}</TableCell>
             </TableRow>
             <TableRow>
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={3}>
@@ -412,15 +412,32 @@ const Dashboard: React.FC = () => {
 
     return (
         <Box>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h4" gutterBottom sx={{
+                fontSize: { xs: '1.5rem', sm: '2rem' },
+                mb: { xs: 2, sm: 3 }
+            }}>
                 Dashboard
             </Typography>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: { xs: 2, sm: 3 }
+            }}>
                 {/* Recent Orders card FIRST */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{
+                        p: { xs: 1.5, sm: 2 },
+                        border: '1px solid #ddd',
+                        borderRadius: 1
+                    }}>
+                        <Typography variant="h6" gutterBottom sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            fontSize: { xs: '1rem', sm: '1.125rem' }
+                        }}>
                             Recent Orders <Chip label={orders.length} size="small" />
                         </Typography>
                         {orders.length > 0 ? (
@@ -447,7 +464,11 @@ const Dashboard: React.FC = () => {
                                 />
                             </>
                         ) : (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{
+                                fontSize: { xs: '1rem', sm: '0.875rem' },
+                                textAlign: 'center',
+                                py: 2
+                            }}>
                                 No orders found
                             </Typography>
                         )}
@@ -456,8 +477,17 @@ const Dashboard: React.FC = () => {
 
                 {/* Subscriptions card SECOND */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{
+                        p: { xs: 1.5, sm: 2 },
+                        border: '1px solid #ddd',
+                        borderRadius: 1
+                    }}>
+                        <Typography variant="h6" gutterBottom sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            fontSize: { xs: '1rem', sm: '1.125rem' }
+                        }}>
                             Subscriptions <Chip label={subscriptions.length} size="small" />
                         </Typography>
                         {subscriptions.length > 0 ? (
@@ -484,7 +514,11 @@ const Dashboard: React.FC = () => {
                                 />
                             </>
                         ) : (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{
+                                fontSize: { xs: '1rem', sm: '0.875rem' },
+                                textAlign: 'center',
+                                py: 2
+                            }}>
                                 No subscriptions found
                             </Typography>
                         )}
@@ -493,8 +527,17 @@ const Dashboard: React.FC = () => {
 
                 {/* Unsubscribe List card THIRD */}
                 <Box sx={{ width: '100%', maxWidth: 800 }}>
-                    <Box sx={{ p: 2, border: '1px solid #ddd', borderRadius: 1 }}>
-                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{
+                        p: { xs: 1.5, sm: 2 },
+                        border: '1px solid #ddd',
+                        borderRadius: 1
+                    }}>
+                        <Typography variant="h6" gutterBottom sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            fontSize: { xs: '1rem', sm: '1.125rem' }
+                        }}>
                             Unsubscribe List <Chip label={unsubscribes.length} size="small" />
                         </Typography>
                         {unsubscribes.length > 0 ? (
@@ -504,9 +547,18 @@ const Dashboard: React.FC = () => {
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell />
-                                                <TableCell sx={{ width: '100%' }}>Sender</TableCell>
-                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>Occurrence</TableCell>
-                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>Unsubscribe</TableCell>
+                                                <TableCell sx={{
+                                                    width: '100%',
+                                                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                                                }}>Sender</TableCell>
+                                                <TableCell sx={{
+                                                    whiteSpace: 'nowrap',
+                                                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                                                }}>Occurrence</TableCell>
+                                                <TableCell sx={{
+                                                    whiteSpace: 'nowrap',
+                                                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                                                }}>Unsubscribe</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -529,7 +581,11 @@ const Dashboard: React.FC = () => {
                                 />
                             </>
                         ) : (
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{
+                                fontSize: { xs: '1rem', sm: '0.875rem' },
+                                textAlign: 'center',
+                                py: 2
+                            }}>
                                 No high-noise senders found
                             </Typography>
                         )}

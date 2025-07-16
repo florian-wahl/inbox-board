@@ -71,7 +71,10 @@ const AppShell: React.FC = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" component="div" sx={{
+            flexGrow: 1,
+            fontSize: { xs: '1.125rem', sm: '1.25rem' }
+          }}>
             Inbox Board
           </Typography>
           {!isAuthenticated && (
@@ -112,7 +115,10 @@ const AppShell: React.FC = () => {
         </Box>
       </Drawer>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{
+        flexGrow: 1,
+        p: { xs: 2, sm: 3 }
+      }}>
         <Outlet />
       </Box>
 

@@ -37,6 +37,82 @@ function DynamicThemeProvider({ children }: { children: React.ReactNode }) {
         main: '#dc004e',
       },
     },
+    typography: {
+      // Increase base font size for better mobile readability
+      fontSize: 16,
+      h1: {
+        fontSize: '2.5rem',
+        '@media (max-width:600px)': {
+          fontSize: '2rem',
+        },
+      },
+      h2: {
+        fontSize: '2rem',
+        '@media (max-width:600px)': {
+          fontSize: '1.75rem',
+        },
+      },
+      h3: {
+        fontSize: '1.75rem',
+        '@media (max-width:600px)': {
+          fontSize: '1.5rem',
+        },
+      },
+      h4: {
+        fontSize: '1.5rem',
+        '@media (max-width:600px)': {
+          fontSize: '1.25rem',
+        },
+      },
+      h5: {
+        fontSize: '1.25rem',
+        '@media (max-width:600px)': {
+          fontSize: '1.125rem',
+        },
+      },
+      h6: {
+        fontSize: '1.125rem',
+        '@media (max-width:600px)': {
+          fontSize: '1rem',
+        },
+      },
+      body1: {
+        fontSize: '1rem',
+        '@media (max-width:600px)': {
+          fontSize: '1.125rem',
+        },
+      },
+      body2: {
+        fontSize: '0.875rem',
+        '@media (max-width:600px)': {
+          fontSize: '1rem',
+        },
+      },
+      subtitle1: {
+        fontSize: '1rem',
+        '@media (max-width:600px)': {
+          fontSize: '1.125rem',
+        },
+      },
+      subtitle2: {
+        fontSize: '0.875rem',
+        '@media (max-width:600px)': {
+          fontSize: '1rem',
+        },
+      },
+      caption: {
+        fontSize: '0.75rem',
+        '@media (max-width:600px)': {
+          fontSize: '0.875rem',
+        },
+      },
+      button: {
+        fontSize: '0.875rem',
+        '@media (max-width:600px)': {
+          fontSize: '1rem',
+        },
+      },
+    },
   }), [resolvedMode]);
 
   return <ThemeProvider theme={muiTheme}><CssBaseline />{children}</ThemeProvider>;

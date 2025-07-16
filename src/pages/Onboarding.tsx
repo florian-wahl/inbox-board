@@ -90,7 +90,8 @@ const Onboarding: React.FC = () => {
                         gutterBottom
                         sx={{
                             fontWeight: 700,
-                            mb: 3
+                            mb: 3,
+                            fontSize: { xs: '2rem', sm: '3rem', md: '3.75rem' }
                         }}
                     >
                         Inbox Board
@@ -101,7 +102,8 @@ const Onboarding: React.FC = () => {
                         sx={{
                             mb: 4,
                             opacity: 0.9,
-                            fontWeight: 300
+                            fontWeight: 300,
+                            fontSize: { xs: '1.25rem', sm: '1.5rem' }
                         }}
                     >
                         Transform your inbox into an organized dashboard
@@ -112,7 +114,7 @@ const Onboarding: React.FC = () => {
                         sx={{
                             mb: 4,
                             opacity: 0.8,
-                            fontSize: '1.1rem',
+                            fontSize: { xs: '1rem', sm: '1.1rem' },
                             lineHeight: 1.6
                         }}
                     >
@@ -169,7 +171,8 @@ const Onboarding: React.FC = () => {
                         gutterBottom
                         sx={{
                             fontWeight: 600,
-                            mb: 2
+                            mb: 2,
+                            fontSize: { xs: '1.5rem', sm: '2rem' }
                         }}
                     >
                         Get Started
@@ -180,7 +183,7 @@ const Onboarding: React.FC = () => {
                         color="text.secondary"
                         sx={{
                             mb: 4,
-                            fontSize: '1.1rem'
+                            fontSize: { xs: '1rem', sm: '1.1rem' }
                         }}
                     >
                         Sign in with your Google account to start organizing your inbox
