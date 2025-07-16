@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Switch, FormControlLabel, Alert, Divider, FormControl, FormLabel, RadioGroup, Radio } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
+import FormControl from '@mui/material/FormControl';
+import FormLabel from '@mui/material/FormLabel';
+import RadioGroup from '@mui/material/RadioGroup';
+import Radio from '@mui/material/Radio';
 import { purgeDatabase, getUserPreferences, setUserPreferences, purgeEmailData } from '../utils/dbUtils';
 import { useInboxData } from '../contexts/InboxDataContext';
 import { useUI, ThemeMode } from '../contexts/UIContext';
