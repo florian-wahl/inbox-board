@@ -227,6 +227,7 @@ export class ParserService {
 
             return {
                 id: message.id,
+                threadId: message.threadId, // <-- Add this line
                 orderNumber: this.extractOrderNumber(subject, body),
                 merchant,
                 amount: currency.amount,

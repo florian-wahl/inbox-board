@@ -1,16 +1,22 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box } from '@mui/material';
+import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
 import { Order } from '../../types/order';
 
 interface OrderCardProps {
     order: Order;
+    threadCount?: number;
 }
 
-const OrderCard: React.FC<OrderCardProps> = ({ order }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ order, threadCount }) => {
     return (
         <Card>
             <CardContent>
-                <Typography variant="h6">{order.merchant}</Typography>
+                <Box display="flex" alignItems="center" gap={1}>
+                    <Typography variant="h6">{order.merchant}</Typography>
+                    {threadCount && threadCount > 1 && (
+                        <Chip label={threadCount} size="small" color="default" sx={{ verticalAlign: 'middle' }} />
+                    )}
+                </Box>
                 <Typography variant="body2" color="text.secondary">
                     Order #{order.orderNumber}
                 </Typography>

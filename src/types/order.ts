@@ -2,6 +2,7 @@ import { ParsedOrderRecord } from '../db/schema';
 
 export interface Order {
     id: string;
+    threadId: string; // <-- Add this line
     orderNumber: string;
     merchant: string;
     amount: number;

@@ -29,6 +29,7 @@ interface Subscription {
 
 interface Order {
     id: string;
+    threadId: string; // <-- Add this line
     orderNumber: string;
     merchant: string;
     amount: number;

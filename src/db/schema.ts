@@ -64,6 +64,7 @@ export interface GmailMessageBody {
 // Add Order, Subscription, and UnsubscribeSender DB records
 export interface ParsedOrderRecord {
     gmailId: string; // Use Gmail message id as unique key
+    threadId: string; // <-- Add this line
     orderNumber: string;
     merchant: string;
     amount: number;
@@ -126,11 +127,11 @@ export class InboxBoardDB extends Dexie {
     constructor() {
         super('InboxBoardDB');
 
-        this.version(8).stores({ // <-- bump version
+        this.version(9).stores({ // <-- bump version
             tokens: '++id, accessToken, refreshToken, expiresAt, updatedAt',
-            rawEmails: '&gmailId, threadId, from, date, historyId, parsed', // Remove ++id, make gmailId the PK
+            rawEmails: '&gmailId, threadId, from, date, historyId, parsed',
             userPreferences: '++id',
-            parsedOrders: '&gmailId, merchant, date',
+            parsedOrders: '&gmailId, threadId, merchant, date', // <-- add threadId index
             parsedSubscriptions: '&gmailId, merchant, nextBilling',
             parsedUnsubscribes: '&gmailId, domain, from',
         }).upgrade(tx => {
