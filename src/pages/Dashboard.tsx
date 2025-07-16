@@ -21,8 +21,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import UnsubscribeIcon from '@mui/icons-material/Unsubscribe';
 import { useInboxData } from '../contexts/InboxDataContext';
 import { useSnackbar } from 'notistack';
+import { extractSenderName } from '../utils/regex';
 // Remove UnsubscribeList import
 
 function CollapsibleOrderRow({ order }: { order: any }) {
@@ -178,7 +180,7 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
         const mailtoUri = uris.find((uri: string) => uri.startsWith('mailto:'));
         let success = false;
         let error = '';
-        const processingKey = enqueueSnackbar(`Unsubscribing from ${sender.from}...`, { variant: 'info', persist: true });
+        const processingKey = enqueueSnackbar(`Unsubscribing from ${extractSenderName(sender.from)}...`, { variant: 'info', persist: true });
         try {
             if (httpUri) {
                 setIframeUrl(httpUri);
@@ -196,8 +198,8 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
             closeSnackbar(processingKey);
             enqueueSnackbar(
                 success
-                    ? `Unsubscribe request sent for ${sender.from}!`
-                    : `Failed to unsubscribe from ${sender.from}: ${error}`,
+                    ? `Unsubscribe request sent for ${extractSenderName(sender.from)}!`
+                    : `Failed to unsubscribe from ${extractSenderName(sender.from)}: ${error}`,
                 { variant: success ? 'success' : 'error' }
             );
         }
@@ -260,26 +262,70 @@ function CollapsibleUnsubscribeRow({ sender }: { sender: any }) {
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                     </IconButton>
                 </TableCell>
-                <TableCell sx={{ border: 0, p: 1, width: '100%' }}>{sender.from}</TableCell>
-                <TableCell sx={{ border: 0, p: 1, whiteSpace: 'nowrap' }}>
-                    <Chip
-                        label={sender._occurrenceCount}
-                        color="default"
-                        size="small"
-                        sx={{ verticalAlign: 'middle' }}
-                    />
+                <TableCell sx={{ border: 0, p: 1, width: '100%' }}>{extractSenderName(sender.from)}</TableCell>
+                <TableCell sx={{
+                    border: 0,
+                    p: 1,
+                    whiteSpace: 'nowrap',
+                    textAlign: { xs: 'center', sm: 'left' }
+                }}>
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                    }}>
+                        <Chip
+                            label={sender._occurrenceCount}
+                            color="default"
+                            size="small"
+                            sx={{
+                                verticalAlign: 'middle'
+                            }}
+                        />
+                    </Box>
                 </TableCell>
                 <TableCell sx={{ border: 0, p: 1, whiteSpace: 'nowrap' }}>
                     {uris.length > 0 && (
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            disabled={sender.unsubscribeType !== 'http'}
-                            onClick={e => { e.stopPropagation(); handleUnsubscribe(); }}
-                        >
-                            Unsubscribe
-                        </Button>
+                        <>
+                            {/* Mobile version - icon only, centered */}
+                            <Box sx={{
+                                display: { xs: 'flex', sm: 'none' },
+                                justifyContent: 'center'
+                            }}>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    disabled={sender.unsubscribeType !== 'http'}
+                                    onClick={e => { e.stopPropagation(); handleUnsubscribe(); }}
+                                    sx={{
+                                        minWidth: 'auto',
+                                        px: 0.5,
+                                        py: 0.5,
+                                        justifyContent: 'center',
+                                        '& .MuiButton-root': {
+                                            minHeight: '32px'
+                                        }
+                                    }}
+                                >
+                                    <UnsubscribeIcon sx={{ fontSize: '1rem' }} />
+                                </Button>
+                            </Box>
+
+                            {/* Desktop version - icon + text */}
+                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    disabled={sender.unsubscribeType !== 'http'}
+                                    onClick={e => { e.stopPropagation(); handleUnsubscribe(); }}
+                                    startIcon={<UnsubscribeIcon />}
+                                >
+                                    Unsubscribe
+                                </Button>
+                            </Box>
+                        </>
                     )}
                 </TableCell>
             </TableRow>
@@ -553,8 +599,20 @@ const Dashboard: React.FC = () => {
                                                 }}>Sender</TableCell>
                                                 <TableCell sx={{
                                                     whiteSpace: 'nowrap',
-                                                    fontSize: { xs: '0.875rem', sm: '1rem' }
-                                                }}>Occurrence</TableCell>
+                                                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                                                    textAlign: { xs: 'center', sm: 'left' }
+                                                }}>
+                                                    <Box sx={{
+                                                        display: { xs: 'none', sm: 'block' }
+                                                    }}>
+                                                        Occurrence
+                                                    </Box>
+                                                    <Box sx={{
+                                                        display: { xs: 'block', sm: 'none' }
+                                                    }}>
+                                                        #
+                                                    </Box>
+                                                </TableCell>
                                                 <TableCell sx={{
                                                     whiteSpace: 'nowrap',
                                                     fontSize: { xs: '0.875rem', sm: '1rem' }

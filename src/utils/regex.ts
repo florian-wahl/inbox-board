@@ -39,6 +39,42 @@ export const EMAIL_PATTERNS = {
     DATE: /Date:\s*([^\n\r]+)/gi,
 };
 
+/**
+ * Extracts just the sender name from Gmail's "From" header
+ * Handles formats like:
+ * - "Sender Name <sender@domain.com>"
+ * - "sender@domain.com"
+ * - "Sender Name" (without email)
+ */
+export function extractSenderName(fromHeader: string): string {
+    if (!fromHeader) return '';
+
+    // Remove any leading/trailing whitespace
+    const trimmed = fromHeader.trim();
+
+    // Check if it's in format "Name <email@domain.com>"
+    const nameEmailMatch = trimmed.match(/^(.+?)\s*<(.+?)>$/);
+    if (nameEmailMatch) {
+        // Return just the name part, trimmed
+        return nameEmailMatch[1].trim();
+    }
+
+    // Check if it's just an email address
+    const emailMatch = trimmed.match(/^[^<>\s]+@[^<>\s]+$/);
+    if (emailMatch) {
+        // Extract domain name from email for better display
+        const domain = trimmed.split('@')[1];
+        if (domain) {
+            // Capitalize domain name
+            return domain.charAt(0).toUpperCase() + domain.slice(1);
+        }
+        return trimmed;
+    }
+
+    // If it's just a name without email, return as is
+    return trimmed;
+}
+
 // Robust global currency regex: matches $12.99, USD 1,234.56, €9.99, £10, etc.
 export const GLOBAL_CURRENCY_REGEX = /(?<!\S)(?:\$|USD|EUR|€|£|GBP|CAD|AUD)\s?\d{1,3}(?:[,.\d]*)(?:\.\d{2})?(?!\S)/gi;
 
