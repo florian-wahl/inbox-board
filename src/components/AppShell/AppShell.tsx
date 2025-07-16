@@ -60,7 +60,7 @@ const AppShell: React.FC = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
+      <AppBar position="static" sx={{ backgroundColor: 'primary.main' }}>
         <Toolbar>
           <IconButton
             color="inherit"

@@ -24,7 +24,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ position = 'top' }) => {
                 sx={{
                     height: '100%',
                     '& .MuiLinearProgress-bar': {
-                        backgroundColor: '#1976d2', // Ensure visible color
                         willChange: 'transform',
                     },
                 }}

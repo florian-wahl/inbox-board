@@ -31,7 +31,7 @@ function DynamicThemeProvider({ children }: { children: React.ReactNode }) {
     palette: {
       mode: resolvedMode,
       primary: {
-        main: '#1976d2',
+        main: '#2E71FF',
       },
       secondary: {
         main: '#dc004e',
