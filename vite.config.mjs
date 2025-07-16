@@ -1,10 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'fs';
+import compression from 'vite-plugin-compression';
 const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        compression({
+            algorithm: 'gzip',
+            ext: '.gz',
+            threshold: 1024, // Only compress files larger than 1KB
+            deleteOriginFile: false, // Keep original files
+            test: /\.(js|css|html|svg|json)$/i, // Compress text-based resources
+        }),
+        compression({
+            algorithm: 'brotliCompress',
+            ext: '.br',
+            threshold: 1024,
+            deleteOriginFile: false,
+            test: /\.(js|css|html|svg|json)$/i,
+        })
+    ],
     server: {
         open: true,
     },
