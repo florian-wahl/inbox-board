@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import AppShell from './components/AppShell/AppShell';
-import Dashboard from './pages/Dashboard';
-import Settings from './pages/Settings';
-import Onboarding from './pages/Onboarding';
 import LoadingSpinner from './components/common/LoadingSpinner';
+
+// Lazy load pages for better performance
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
 
 const ProtectedLayout: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -36,18 +38,34 @@ const AppRouter: React.FC = () => {
         {/* Public routes */}
         <Route
           path="/onboarding"
-          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Onboarding />}
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Suspense fallback={<LoadingSpinner message="Loading onboarding..." />}>
+                <Onboarding />
+              </Suspense>
+            )
+          }
         />
 
         {/* Protected routes with AppShell layout */}
         <Route path="/" element={<ProtectedLayout />}>
           <Route
             path="/dashboard"
-            element={<Dashboard />}
+            element={
+              <Suspense fallback={<LoadingSpinner message="Loading dashboard..." />}>
+                <Dashboard />
+              </Suspense>
+            }
           />
           <Route
             path="/settings"
-            element={<Settings />}
+            element={
+              <Suspense fallback={<LoadingSpinner message="Loading settings..." />}>
+                <Settings />
+              </Suspense>
+            }
           />
 
           {/* Default redirect for authenticated users */}
