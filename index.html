@@ -13,10 +13,23 @@
     <link rel="dns-prefetch" href="https://accounts.google.com" />
     <link rel="dns-prefetch" href="https://gmail.googleapis.com" />
 
-    <!-- Mobile performance optimizations -->
+    <!-- PWA and Mobile optimizations -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Inbox Board" />
+
+    <!-- Safari-specific icon tags -->
+    <link rel="apple-touch-icon" href="/inbox-board/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/inbox-board/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/inbox-board/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/inbox-board/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/inbox-board/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/inbox-board/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/inbox-board/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/inbox-board/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/inbox-board/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/inbox-board/icons/icon-192.png" />
 
     <!-- Critical CSS inline for faster rendering -->
     <style>
@@ -46,7 +59,8 @@
 
     <link rel="manifest" href="/inbox-board/manifest.json" />
     <link rel="icon" href="/inbox-board/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/inbox-board/icons/apple-touch-icon.png" />
+    <link rel="icon" href="/inbox-board/icons/icon-192.png" type="image/png" sizes="192x192" />
+    <link rel="icon" href="/inbox-board/icons/icon-512.png" type="image/png" sizes="512x512" />
     <title>Inbox Board</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
