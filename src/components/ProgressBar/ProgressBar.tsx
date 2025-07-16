@@ -1,5 +1,6 @@
 import React from 'react';
-import { LinearProgress, Box } from '@mui/material';
+import LinearProgress from '@mui/material/LinearProgress';
+import Box from '@mui/material/Box';
 
 interface ProgressBarProps {
     position?: 'top' | 'bottom';

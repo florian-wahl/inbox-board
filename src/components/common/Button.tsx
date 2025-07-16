@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button as MuiButton, ButtonProps } from '@mui/material';
+import MuiButton from '@mui/material/Button';
+import { ButtonProps } from '@mui/material/Button';
 
 interface CustomButtonProps extends ButtonProps {
     children: React.ReactNode;

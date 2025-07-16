@@ -1,5 +1,6 @@
 import React from 'react';
-import { Drawer, Box } from '@mui/material';
+import Drawer from '@mui/material/Drawer';
+import Box from '@mui/material/Box';
 
 interface BottomSheetProps {
     open: boolean;

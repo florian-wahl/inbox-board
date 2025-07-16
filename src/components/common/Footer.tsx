@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 // The version will be injected at build time via Vite define
 const version = import.meta.env.VITE_APP_VERSION || '0.0.0';
