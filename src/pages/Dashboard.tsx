@@ -331,7 +331,10 @@ const Dashboard: React.FC = () => {
 
     // Sort orders by date (most recent first) and apply pagination
     const sortedAndPaginatedOrders = useMemo(() => {
-        const sortedOrders = [...orders].sort((a, b) => {
+        // Filter out orders with SENT label
+        const nonSentOrders = orders.filter(order => !order.labelIds?.includes('SENT'));
+
+        const sortedOrders = [...nonSentOrders].sort((a, b) => {
             const dateA = new Date(a.date).getTime();
             const dateB = new Date(b.date).getTime();
             return dateB - dateA; // Most recent first

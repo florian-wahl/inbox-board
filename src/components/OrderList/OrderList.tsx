@@ -8,9 +8,12 @@ interface OrderListProps {
 }
 
 const OrderList: React.FC<OrderListProps> = ({ orders }) => {
+    // Filter out orders with SENT label
+    const nonSentOrders = orders.filter(order => !order.labelIds?.includes('SENT'));
+
     // Group orders by threadId and only keep the first (oldest) order in each thread
     const threadMap = new Map<string, Order[]>();
-    orders.forEach(order => {
+    nonSentOrders.forEach(order => {
         if (!threadMap.has(order.threadId)) {
             threadMap.set(order.threadId, []);
         }
