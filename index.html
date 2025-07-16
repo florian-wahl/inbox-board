@@ -36,7 +36,16 @@
             align-items: center;
             height: 100vh;
         }
+
+        /* Preload critical fonts */
+        @font-face {
+            font-family: 'Roboto';
+            font-display: swap;
+        }
     </style>
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/index.tsx" as="script" type="module" />
 
     <link rel="manifest" href="/inbox-board/manifest.json" />
     <link rel="icon" href="/inbox-board/favicon.svg" type="image/svg+xml" />

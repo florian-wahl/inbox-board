@@ -18,7 +18,7 @@ const ProtectedLayout: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/onboarding" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <AppShell />;
@@ -37,6 +37,19 @@ const AppRouter: React.FC = () => {
       <Routes>
         {/* Public routes */}
         <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Suspense fallback={<LoadingSpinner message="Loading onboarding..." />}>
+                <Onboarding />
+              </Suspense>
+            )
+          }
+        />
+
+        <Route
           path="/onboarding"
           element={
             isAuthenticated ? (
@@ -50,7 +63,7 @@ const AppRouter: React.FC = () => {
         />
 
         {/* Protected routes with AppShell layout */}
-        <Route path="/" element={<ProtectedLayout />}>
+        <Route path="/dashboard" element={<ProtectedLayout />}>
           <Route
             path="/dashboard"
             element={
@@ -59,6 +72,9 @@ const AppRouter: React.FC = () => {
               </Suspense>
             }
           />
+        </Route>
+
+        <Route path="/settings" element={<ProtectedLayout />}>
           <Route
             path="/settings"
             element={
@@ -67,18 +83,12 @@ const AppRouter: React.FC = () => {
               </Suspense>
             }
           />
-
-          {/* Default redirect for authenticated users */}
-          <Route
-            path="/"
-            element={<Navigate to="/dashboard" replace />}
-          />
         </Route>
 
         {/* Catch all - redirect to dashboard or onboarding */}
         <Route
           path="*"
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/onboarding"} replace />}
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />}
         />
       </Routes>
     </HashRouter>

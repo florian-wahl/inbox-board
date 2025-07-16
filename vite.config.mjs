@@ -21,7 +21,7 @@ export default defineConfig({
                     'mui-vendor': ['@mui/material', '@mui/icons-material'],
                     'dexie-vendor': ['dexie', 'dexie-react-hooks'],
                     'router-vendor': ['react-router-dom'],
-                    'utils-vendor': ['tldts', 'web-vitals'],
+                    'utils-vendor': ['tldts'],
                     // Separate heavy components
                     'notistack-vendor': ['notistack']
                 }
