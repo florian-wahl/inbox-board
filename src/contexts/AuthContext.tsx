@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true); // New loading state
+    const [expiresAt, setExpiresAt] = useState<number | null>(null);
     const hasFetchedRef = useRef(false);
 
     // Load tokens from database on app initialization
@@ -82,23 +83,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                             await gmailService.getProfile();
                             setAccessToken(tokenRecord.accessToken);
                             setIsAuthenticated(true);
+                            setExpiresAt(tokenRecord.expiresAt || null); // <-- set expiresAt
                         } catch (error) {
                             console.log('Token is invalid, clearing from database:', error);
                             await db.tokens.clear();
                             setAccessToken(null);
                             setIsAuthenticated(false);
+                            setExpiresAt(null);
                         }
                     } else {
                         console.log('Token has expired, clearing from database');
                         await db.tokens.clear();
                         setAccessToken(null);
                         setIsAuthenticated(false);
+                        setExpiresAt(null);
                     }
                 } else {
                     console.log('No valid token record found');
+                    setExpiresAt(null);
                 }
             } catch (error) {
                 console.error('Error loading tokens from database:', error);
+                setExpiresAt(null);
             } finally {
                 setIsLoading(false); // Set loading to false after token loading
             }
@@ -111,6 +117,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     useEffect(() => {
         gmailService.setAccessToken(accessToken);
     }, [accessToken]);
+
+    // Schedule silent token renewal 1 minute before expiry
+    useEffect(() => {
+        if (!accessToken || !expiresAt) return;
+        const now = Date.now();
+        const timeout = expiresAt - now - 60 * 1000; // 1 minute before expiry
+        if (timeout > 0) {
+            const timer = setTimeout(() => {
+                login(); // Attempt silent renewal
+            }, timeout);
+            return () => clearTimeout(timer);
+        }
+    }, [accessToken, expiresAt]);
 
     // Fetch initial emails after successful authentication
     const fetchInitialEmails = async (token: string) => {
@@ -204,6 +223,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
                         setAccessToken(access_token);
                         setIsAuthenticated(true);
+                        setExpiresAt(expiresAt); // <-- set expiresAt
 
                         console.log('OAuth login successful');
 
@@ -237,11 +257,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             setAccessToken(null);
             setIsAuthenticated(false);
+            setExpiresAt(null);
         } catch (error) {
             console.error('Error during logout:', error);
             // Still clear local state even if database clear fails
             setAccessToken(null);
             setIsAuthenticated(false);
+            setExpiresAt(null);
         }
     };
 
