@@ -45,6 +45,12 @@ function CollapsibleOrderRow({ order }: { order: any }) {
                 <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box margin={1}>
+                            {/* Order Number Display */}
+                            {order.orderNumber && order.orderNumber !== 'Unknown' && (
+                                <Typography variant="subtitle2">
+                                    <Typography component="span" fontWeight="bold">Order Number:</Typography> {order.orderNumber}
+                                </Typography>
+                            )}
                             <Typography variant="subtitle2">
                                 <Typography component="span" fontWeight="bold">From:</Typography> {order.from}
                             </Typography>

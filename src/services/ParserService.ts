@@ -302,16 +302,39 @@ export class ParserService {
     }
 
     private extractOrderNumber(subject: string, body: string): string {
+        // Remove invisible/RTL Unicode characters
+        function normalizeText(text: string): string {
+            // Remove common invisible/RTL chars: LRM, RLM, LRE, RLE, PDF, LRO, RLO, etc.
+            return text.replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
+        }
+
+        const normalizedSubject = normalizeText(subject);
+        const normalizedBody = normalizeText(body);
+
+        // Improved patterns: at least 5 alphanumeric/dash, must contain a digit
         const orderPatterns = [
-            /order[:\s]*#?(\w+)/i,
-            /order[:\s]*number[:\s]*(\w+)/i,
-            /#(\w+)/,
+            /order[\s:]*#?\s*([A-Z0-9\-]{5,})/i, // e.g. "Order: 12345", "Order #ABC-123"
+            /order[\s:]*number[\s:]*([A-Z0-9\-]{5,})/i,
+            /#([A-Z0-9\-]{5,})/, // e.g. "#12345", "#ABC-123"
+        ];
+
+        // List of common words to exclude
+        const commonWords = [
+            'order', 'number', 'will', 'shipped', 'delivered', 'confirmed', 'confirmation', 'receipt', 'invoice', 'purchase', 'tracking', 'your', 'thank', 'total', 'amount', 'date', 'item', 'items', 'status', 'paid', 'pending', 'refunded', 'cancelled', 'canceled', 'none', 'unknown'
         ];
 
         for (const pattern of orderPatterns) {
-            const match = (subject + ' ' + body).match(pattern);
+            const match = (normalizedSubject + ' ' + normalizedBody).match(pattern);
             if (match) {
-                return match[1];
+                const candidate = match[1];
+                // Must be at least 5 chars, contain a digit, and not a common word
+                if (
+                    candidate.length >= 5 &&
+                    /\d/.test(candidate) &&
+                    !commonWords.includes(candidate.toLowerCase())
+                ) {
+                    return candidate;
+                }
             }
         }
 
