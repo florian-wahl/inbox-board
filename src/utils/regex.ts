@@ -7,10 +7,13 @@ export const CURRENCY_PATTERNS = {
 };
 
 // Date patterns
+// - US: MM/DD/YYYY
+// - EUROPEAN: DD/MM/YYYY
+// Use more specific ranges to differentiate between the two
 export const DATE_PATTERNS = {
     ISO: /\d{4}-\d{2}-\d{2}/g,
-    US: /\d{1,2}\/\d{1,2}\/\d{4}/g,
-    EUROPEAN: /\d{1,2}\/\d{1,2}\/\d{4}/g,
+    US: /(?:0?[1-9]|1[0-2])\/(?:0?[1-9]|[12][0-9]|3[01])\/\d{4}/g,
+    EUROPEAN: /(?:0?[1-9]|[12][0-9]|3[01])\/(?:0?[1-9]|1[0-2])\/\d{4}/g,
     RELATIVE: /(today|tomorrow|yesterday|next week|next month)/gi,
     MONTH_DD_YYYY: /([A-Z][a-z]+ \d{1,2}, \d{4})/g,
 };
@@ -175,11 +178,47 @@ export const extractDate = (text: string): Date | null => {
     for (const [key, pattern] of Object.entries(DATE_PATTERNS)) {
         const match = text.match(pattern);
         if (match) {
-            if (key === 'MONTH_DD_YYYY') {
-                // Parse 'Month DD, YYYY' format
-                return new Date(match[0]);
+            const value = match[0];
+            switch (key) {
+                case 'ISO':
+                case 'MONTH_DD_YYYY':
+                    // These formats are safely parsed by Date constructor
+                    return new Date(value);
+                case 'US': {
+                    const [month, day, year] = value.split('/').map(n => parseInt(n, 10));
+                    return new Date(year, month - 1, day);
+                }
+                case 'EUROPEAN': {
+                    const [day, month, year] = value.split('/').map(n => parseInt(n, 10));
+                    return new Date(year, month - 1, day);
+                }
+                case 'RELATIVE': {
+                    const now = new Date();
+                    const lower = value.toLowerCase();
+                    if (lower === 'today') return now;
+                    if (lower === 'tomorrow') {
+                        const d = new Date(now);
+                        d.setDate(d.getDate() + 1);
+                        return d;
+                    }
+                    if (lower === 'yesterday') {
+                        const d = new Date(now);
+                        d.setDate(d.getDate() - 1);
+                        return d;
+                    }
+                    if (lower === 'next week') {
+                        const d = new Date(now);
+                        d.setDate(d.getDate() + 7);
+                        return d;
+                    }
+                    if (lower === 'next month') {
+                        const d = new Date(now);
+                        d.setMonth(d.getMonth() + 1);
+                        return d;
+                    }
+                    break;
+                }
             }
-            return new Date(match[0]);
         }
     }
     return null;
